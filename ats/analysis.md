@@ -20,5 +20,6 @@ job description.
 #### Workflow
 
 Input Job description .-> Data Extraction -> keyword Matching -> Score
+                      |
 Upload CV document ---'
 
