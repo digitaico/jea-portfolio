@@ -1,6 +1,6 @@
 ## Jorge Eduardo Ardila
-### Backend Developer - ML Engineer
-### PORTFOLIO
+#### Backend Developer - ML Engineer
+#### PORTFOLIO
 
 | Project | Language | Topic | Publishing date |
 |:--|--:|:--:|--:|
@@ -8,4 +8,4 @@
 
 
 
-Slava Ukraini!!!
+_*Slava Ukraini!!!*_
