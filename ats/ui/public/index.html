@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS Score</title>
+    <style>
+      body {font-family: sans-serif;}
+      textarea: {width: 80%; height: 200px; margin-bottom: 10px; display: block;}
+      input[type="file"] {margin-bottom: 10px;}
+      #score_result {margin-top: 20px; font-size: 1.2em; font-weight: bold;}
+    </style>
+  </head>
+  <body>
+    <h1>ATS Resume Scorer by JEA</h1>
+    <form id="uploadForm" method="POST" enctype="multipart/form-data">
+      <div>
+        <h2>Language</h2>
+        <select id="languageSelect" name="language">
+          <option value="">... Select language</option>
+          <option value="english">English</option>
+          <option value="spanish">Español</option>
+        </select>
+      </div>
+
+      <div>
+        <h2>Job Description</h2>
+        <label for="job_description">Copy Job Description and paste here:</label>
+        <textarea id="jobDescription" name="job_description" placeholder="Paste Job Description here" required></textarea>
+      </div>
+
+      <div>
+        <h2>Resume</h2>
+        <label for="resumeFile">.txt, .pdf, .docx</label>
+        <input type="file" id="resumeFile" name="resume_file" accept=".txt, .pdf, .docx" required>
+      </div>
+
+      <button id="submitBtn">Pay Jorge and Get Score!</button>
+
+    </form>
+      
+    <div id="score_result"></div>
+    
+    <script src="script.js"></script>
+  </body>
+</html>
