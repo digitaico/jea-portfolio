@@ -7,6 +7,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import sys # to check if a module is run deirectly
 
 # Download NLTK data: stop words and tokenizer.
 def download_nktk_data(resource):
@@ -31,16 +32,28 @@ download_nktk_data('tokenizers/punkt')
 download_nktk_data('corpora/stopwords')
 
 class TextProcessor:
-
+    """
+    Class methods to perfom text cleaning
+    """
     def __init__(self, language='english'):
         """
         Initialize the class with stop words for a given language.
         """
+        self.stop_words_lang = 'english' # default fallback
         try:
-            self.stop_words = set(stopwords.words(language))
+            stopwords.words(language)
+            self.stop_words_lang = language
+            print(f"Using '{self.stop_words_lang}' stop words.")
         except OSError:
-            print(f"Error: NLTK  stop words for '{language}' not found.")
-            self.stop_words = set() # empty set to avoid errors
+            if __name__ == "__main__":
+                print(f"Error: NLTK  stop words for '{language}' not found. Fallback to 'english'")
+            try:
+                stopwords.words(self.stop_words_lang)
+                print(f"Using fallback '{self.stop_words_lang}' stop words.")
+            except OSError:
+                if __name__ == "__main__":
+                    print(f"Error: NLTK  stop words for '{language}' not found even for Fallback. No stop words will be used.")
+                self.stop_words_lang = None # no stop words loaded
 
     def clean_and_tokenize(self, text: str) -> list[str]:
         """
@@ -65,6 +78,9 @@ class TextProcessor:
         @params: text: str
         @returns: str # cleansed text
         """
+        if not isinstance(text, str):
+            return ""
+
         text = text.lower()
         text = text.translate(str.maketrans('', '', string.punctuation))
         return text
@@ -73,11 +89,12 @@ class ResumeScorer:
     """
     Methods to calculate afinity score between a job description and a resume using TF-IDF and Cosine Similarity
     """
-    def __init__(self, text_processor: TextProcessor):
+    def __init__(self, text_processor: TextProcessor, language='english'):
         """
         Initializes the scorer with text processor dependency injection.
         """
         self.text_processor = text_processor
+        self.scoring_language = text_processor.stop_words_lang if text_processor.stop_words_lang else language
 
     def calculate_score(self, jd_text: str, resume_text: str) -> float:
         """
@@ -95,15 +112,29 @@ class ResumeScorer:
 
         # Create a TfifdVectorizer
         vectorizer = TfidfVectorizer(stop_words='english')
-        # fit and transform documents: build vocabulary included on both documents
-        tfidf_matrix = vectorizer.fit_transform([cleaned_jd_text, cleaned_resume_text])
-        # estimate cosine similarity
-        cosine_sim = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
 
-        return float(cosine_sim)
+        try:
+            # fit and transform documents: build vocabulary included on both documents
+            tfidf_matrix = vectorizer.fit_transform([cleaned_jd_text, cleaned_resume_text])
+
+            # Check if features were extracted - vaocabulary is no empty
+            if tfidf_matrix.shape[1] == 0:
+                return 0.0
+
+            # estimate cosine similarity
+            cosine_sim = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
+            return float(cosine_sim)
+        except ValueError as e:
+            # If texts are very short or contain no terms after cleaning
+            print(f"ValueError during TF-IDF processing: {e}")
+            return 0.0
+        except Exception as e:
+            print(f"An error ocurred during score calculation: {e}")
+            return 0.0
 
 # --- // usage // ----
 if __name__ == "__main__":
+    print("Running ResumeScorer.py directly for testing.")
     job_description_text = """
     We are looking for a highly motivated Software Engineer with 3+ years of experience
     in Python development. Experience with web frameworks like Flask or FastAPI is
@@ -137,7 +168,7 @@ if __name__ == "__main__":
     similarity_score = scorer.calculate_score(job_description_text, resume_text)
 
     # Print the score
-    print(f"Dear! Your resume compatibility Score (TF-IDF + Cosine Similarity): {similarity_score * 100:2f}%")
+    print(f"Dear! Your resume compatibility Score (TF-IDF + Cosine Similarity) is {similarity_score * 100:.2f}%")
 
 
 

@@ -23,3 +23,18 @@ Input Job description .-> Data Extraction -> keyword Matching -> Score
                       |
 Upload CV document ---'
 
+#### Stack
+
+- Python
+- NLTK
+- Scikit-Learn
+- Flask to expose python API
+- Nodejs to run UI
+- `TF-IDF` to convert text to vector
+- `Cosine Similarity` to score similarity between two vectors
+
+#### Parameters and return
+@param Job Description: str # Copy Job description from job listing
+@param language: str # Language of resume and job description
+@param Resume: Document # a PDF or DOCX document to be read
+@returns Similarity Score: number # a 0 - 100 score that assess resume similarity with job description. 
