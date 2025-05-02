@@ -1,11 +1,11 @@
 {
-  "name": "ui",
+  "name": "ATS GUI",
   "version": "1.0.0",
   "type": "module",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev":"node src/server.js --env-file=.env --inspect --trace-warnings"
+    "dev":"node --env-file=.env src/server.js --inspect --trace-warnings"
   },
   "keywords": [],
   "author": "",

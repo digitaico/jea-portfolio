@@ -9,6 +9,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import sys # to check if a module is run deirectly
 
+
 # Download NLTK data: stop words and tokenizer.
 def download_nktk_data(resource):
     resource_name = resource.split('/')[-1]
@@ -17,7 +18,7 @@ def download_nktk_data(resource):
         print(f"'{resource_name}' Data found")
     except LookupError:
         if __name__ == "__main__":
-            print(f"'{resource_name}' Data NOT found... Attemting download...")
+            print(f"'{resource_name}' Data NOT found... Attempting download...")
         try:
             nltk.download(resource_name, quiet=True)
             if __name__ == "__main__":
