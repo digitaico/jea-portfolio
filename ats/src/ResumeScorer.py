@@ -129,7 +129,7 @@ class ResumeScorer:
             print(f"ValueError during TF-IDF processing: {e}")
             return 0.0
         except Exception as e:
-            print(f"An error ocurred during score calculation: {e}")
+            print(f"An error occurred during score calculation: {e}")
             return 0.0
 
 # --- // usage // ----
