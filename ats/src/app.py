@@ -22,6 +22,7 @@ def get_score():
     """
     job_description = request.form.get('job_description')
     resume_file = request.files.get('resume_file')
+    language = request.form.get('language', 'english')
 
     # validation
     if not job_description or not resume_file:
@@ -40,9 +41,14 @@ def get_score():
     try:
         # Instantiate TextProcessor and ResumeScorer
         text_processor_instance = TextProcessor(language=language)
-        scorer_instance = ResumeScorer(text_processor=text_processor, language = text_processor_instance.stop_words_lang)
+        print(f"text processor created : {text_processor_instance}")
+
+        scorer_instance = ResumeScorer(text_processor=text_processor_instance, language 
+                                       = text_processor_instance.stop_words_lang)
+        print(f"ResumeScorer instance created : {scorer_instance}")
         
         score = scorer_instance.calculate_score(job_description, resume_text)
+        print(f"Score calculated: {score}")
 
         return jsonify({"score": score})
 

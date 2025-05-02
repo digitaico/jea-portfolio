@@ -1,7 +1,7 @@
 'use strict';
 
 document.getElementById('uploadForm')
-    .addeventListener('submit', async (event) => {
+    .addEventListener('submit', async (event) => {
       event.preventDefault();  // prevent default submission
 
       const scoreResultDiv = document.getElementById('score_result');
