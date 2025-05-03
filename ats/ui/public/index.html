@@ -9,10 +9,14 @@
       textarea: {width: 80%; height: 200px; margin-bottom: 10px; display: block;}
       input[type="file"] {margin-bottom: 10px;}
       #score_result {margin-top: 20px; font-size: 1.2em; font-weight: bold;}
+      div.table {max-width: 100%; border: 1px solid grey; display: table;}
+      div.tr {border: 1px solid grey; display: table-row;}
+      div.td {border: 1px solid grey;display: table-cell;}
+      div.col {display: table-column;}
     </style>
   </head>
   <body>
-    <h1>ATS Resume Scorer by JEA</h1>
+    <h1>JEMATS Resume Scorer</h1>
     <form id="uploadForm" method="POST" enctype="multipart/form-data">
       <div>
         <h2>Language</h2>
@@ -39,8 +43,31 @@
 
     </form>
       
-    <div id="score_result"></div>
+    <div id="result_banner"></div>
     
+    <div id="score_result" class="table">
+      <div class="tr">
+        <div class="td">Score</div>
+        <div class="td">Value</div>
+      </div>
+      <div class="tr">
+        <div class="td">TF-IDF</div>
+        <div class="td" id="tfidf_score"></div>
+      </div>
+      <div class="tr">
+        <div class="td">Skill</div>
+        <div class="td" id="skill_score"></div>
+      </div>
+      <div class="tr">
+        <div class="td">Combined</div>
+        <div class="td" id="combined_score"></div>
+      </div>
+      <div class="tr">
+        <div class="td">Common Skills</div>
+        <div class="td" id="common_skills"></div>
+      </div>
+    </div>
+
     <script src="script.js"></script>
   </body>
 </html>

@@ -4,8 +4,13 @@ document.getElementById('uploadForm')
     .addEventListener('submit', async (event) => {
       event.preventDefault();  // prevent default submission
 
-      const scoreResultDiv = document.getElementById('score_result');
-      scoreResultDiv.textContent = 'Estimating Score...';
+      const tfidf_score = document.getElementById('tfidf_score');
+      const skill_score = document.getElementById('skill_score');
+      const combined_score = document.getElementById('combined_score');
+      const common_skills = document.getElementById('common_skills');
+
+      const banner = document.getElementById('result_banner');
+      banner.textContent = 'Estimating Scores...';
 
       const formData = new FormData(event.target);
 
@@ -19,12 +24,13 @@ document.getElementById('uploadForm')
           throw new Error(`Backend error: ${response.status} - ${
               errorData.error || response.statusText}`)
         }
-        const data = await response.json();
-        const score = data.score * 100;
-
-        scoreResultDiv.textContent = `Similarity Score: ${score.toFixed(2)}%`;
+        const scores = await response.json();
+        tfidf_score.innerText = (scores.tfidf_score * 100).toFixed(2);
+        skill_score.innerText = (scores.skill_score * 100).toFixed(2);
+        combined_score.innerText = (scores.combined_score * 100).toFixed(2);
+        common_skills.innerText = scores.common_skills;
       } catch (e) {
-        scoreResultDiv.textContent = `Error getting score: ${e}`;
+        banner.textContent = ` Error getting score: ${e} `;
         console.error('Fetch error: ', e)
       }
-    })
+    });

@@ -38,3 +38,16 @@ Upload CV document ---'
 @param language: str # Language of resume and job description
 @param Resume: Document # a PDF or DOCX document to be read
 @returns Similarity Score: number # a 0 - 100 score that assess resume similarity with job description. 
+
+### Changelog
+
+#### v1.0.0 
+- Score based on word frequency and similarity.
+- Score is calculated by comparing and estimating similarity between two vectors.  TF-IDF and Cosine Similarity.
+- Primitive HTML, CSS User interface.
+
+#### v2.0.0
+- Score based on `understanding` the meaning of certain terms as skills.
+- Use of NLP.
+    By using Skill and Entity Extraction we can pull named entities like `Skills`, `Technologies`, `Qualifications`, `Job 
+    Titles`, `Companies`, among others. Hence we can prioritize matches by customizing weights.
