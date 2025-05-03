@@ -4,8 +4,13 @@ document.getElementById('uploadForm')
     .addEventListener('submit', async (event) => {
       event.preventDefault();  // prevent default submission
 
-      const scoreResultDiv = document.getElementById('score_result');
-      scoreResultDiv.textContent = 'Estimating Scores...';
+      const tfidf_score = document.getElementById('tfidf_score');
+      const skill_score = document.getElementById('skill_score');
+      const combined_score = document.getElementById('combined_score');
+      const common_skills = document.getElementById('common_skills');
+
+      const banner = document.getElementById('result_banner');
+      banner.textContent = 'Estimating Scores...';
 
       const formData = new FormData(event.target);
 
@@ -20,22 +25,12 @@ document.getElementById('uploadForm')
               errorData.error || response.statusText}`)
         }
         const scores = await response.json();
-
-        scoreResultDiv.innerHTML = `
-        <h2>JEMATS Scores:</h2>
-        <p><strong>TF-IDF Similarity:</strong> ${
-            scores.tfidf_score * 100: .2f}%</p>
-        <p><strong>Skill Match:</strong> ${scores.skill_score * 100: .2f}%</p>
-        <p><strong>Combined Score:</strong> ${
-            scores.combined_score * 100: .2f}%</p>
-        ${
-            scores.common_skills && scores.common_skills.length > 0 ?
-            '<p><strong>Common Skills Found:</strong>{scores.common_skills.join(',
-            ')}</p>' :
-            '<p><strong>No specific skills from Job descrition in resume.</p>'}
-    `;
+        tfidf_score.innerText = (scores.tfidf_score * 100).toFixed(2);
+        skill_score.innerText = (scores.skill_score * 100).toFixed(2);
+        combined_score.innerText = (scores.combined_score * 100).toFixed(2);
+        common_skills.innerText = scores.common_skills;
       } catch (e) {
-        scoreResultDiv.textContent = ` Error getting score: $ {e}`;
+        banner.textContent = ` Error getting score: ${e} `;
         console.error('Fetch error: ', e)
       }
-    })
+    });

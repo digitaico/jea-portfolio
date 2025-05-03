@@ -161,9 +161,8 @@ class ResumeScorer:
             
         # return all scores and common skills
         return {
-            "tfidf_score":float(tfidf_score),
-            "skill_score":float(skill_score),
-            "combined_score":float(combined_score),
-            "common_skills": common_skills 
+                "tfidf_score": float(tfidf_score),
+                "skill_score": float(skill_score),
+                "combined_score":float(combined_score),
+                "common_skills": common_skills
         }
-

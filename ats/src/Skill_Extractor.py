@@ -3,6 +3,7 @@ Skill Extractor: Class and methods to extract skills.
 Uses NLP librart spaCy to perform NER Named Entity Recognition
 """
 import spacy
+from spacy.matcher import Matcher
 from spacy.matcher import PhraseMatcher 
 
 class SkillExtractor:

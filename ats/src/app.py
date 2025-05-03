@@ -65,7 +65,6 @@ def get_score():
         print(f"ResumeScorer instance created : {scorer_instance}")
         
         scores = scorer_instance.calculate_scores(job_description, resume_text)
-        #print(f"Score calculated: {scores}")
 
         return jsonify(scores)
 
