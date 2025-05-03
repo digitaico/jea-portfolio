@@ -83,6 +83,7 @@ web_modules/
 .cache
 .parcel-cache
 .pyc
+*.pyc
 
 # Next.js build output
 .next
