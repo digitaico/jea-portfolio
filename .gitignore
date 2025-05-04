@@ -83,6 +83,8 @@ web_modules/
 .cache
 .parcel-cache
 __pycache__/
+pycache/
+**/__pycache__/
 .pyc
 *.pyc
 
