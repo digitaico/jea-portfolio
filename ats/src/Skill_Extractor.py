@@ -4,7 +4,6 @@ Uses NLP librart spaCy to perform NER Named Entity Recognition
 """
 import spacy
 from spacy.matcher import Matcher
-#from spacy.matcher import PhraseMatcher 
 
 class SkillExtractor:
 
@@ -31,18 +30,20 @@ class SkillExtractor:
         adds patterns to the Matcher to identify requirements, experience ...
         these patterns are examples and should be expanded, refined.
         """
-        # Pattern for "required" [skill/experience/qualification]
-        pattern_required_skill = [{"LOWER": "required"}, {"POS":{"IN": ["NOUN", "PROPN"]}, "OP":"+"}]
-        # Pattern for "must have" [skill/experience/qualification]
-        pattern_must_have = [{"LOWER": "must"}, {"LOWER": "have"},{"POS":{"IN": ["NOUN", "PROPN"]}, "OP":"+"}]
+        # Pattern for "required [skill/experience/qualification]"
+        pattern_required_skill = [{"LOWER": "required"}, {"POS": {"IN": ["NOUN", "PROPN"]}, "OP": "+"}] # e.g., "required Python", "required experience"
+
+        # Pattern for "must have [skill/experience/qualification]"
+        pattern_must_have = [{"LOWER": "must"}, {"LOWER": "have"}, {"POS": {"IN": ["NOUN", "PROPN"]}, "OP": "+"}] # e.g., "must have experience", "must have SQL"
+
         # Pattern for "X+ years of experience in [skill/field]"
-        pattern_years_experience = [{"POS":"NUM", "OP":"+"}, {"LOWER": "+", "OP":"?"}, {"LOWER": "years"}, {"LOWER": "of"}, 
-                                    {"LOWER": "experience"}, {"LOWER": "in"}, {"POS": {"IN": ["NOUN", "PROPN"]}, "OP": "+"}]
+        pattern_years_experience = [{"POS": "NUM", "OP": "+"}, {"LOWER": "+", "OP": "?"}, {"LOWER": "years"}, {"LOWER": "of"}, {"LOWER": "experience"}, {"LOWER": "in"}, {"POS": {"IN": ["NOUN", "PROPN"]}, "OP": "+"}] # e.g., "3+ years of experience in Python"
+
         # Pattern for "knowledge of [skill/technology]"
         pattern_knowledge_of = [{"LOWER": "knowledge"}, {"LOWER": "of"}, {"POS": {"IN": ["NOUN", "PROPN", "ADJ"]}, "OP": "+"}] # e.g., "knowledge of AWS", "knowledge of Machine Learning"
-            
+
         # Pattern for Bachelor's/Master's degree
-        pattern_degree = [{"POS": "NOUN", "REGEX": "[Bb]achelor's|[Mm]aster's"}, {"LOWER": "degree"}, {"LOWER": "in", "OP": "?"}, {"POS": {"IN": ["NOUN", "PROPN"]}, "OP": "+"}] # e.g., "Bachelor's degree in Computer Science"
+        pattern_degree = [{"LOWER": {"IN": ["bachelor's", "master's"]}},{"LOWER":"degree"}, {"LOWER": "in", "OP": "?"}, {"POS": {"IN": ["NOUN", "PROPN"]}, "OP": "+"}] # e.g., "Bachelor's degree in Computer Science"
 
         # Add patterns to the matcher with labels
         self.matcher.add("REQUIRED_SKILL_PHRASE", [pattern_required_skill, pattern_must_have])
@@ -50,22 +51,6 @@ class SkillExtractor:
         self.matcher.add("KNOWLEDGE_OF", [pattern_knowledge_of])
         self.matcher.add("QUALIFICATION_DEGREE", [pattern_degree])
 
-        """ PhraseMatcher
-        skills_list = [
-            "Python", "Java", "JavaScript", "C++", "C#", "Go", "Rust", "Swift", "Kotlin","ES6"
-            "SQL", "PostgreSQL", "MySQL", "MongoDB", "Redis","MsSQL", "cassandra", "Aurora", "Dynamo",
-            "Flask", "Django", "FastAPI", "React", "Angular", "Vue.js", "Node.js", "Express.js",
-            "AWS", "Azure", "GCP", "Docker", "Kubernetes", "Git", "Terraform",
-            "Agile", "Scrum", "Kanban", "CI/CD", "Unit Testing", "Integration Testing",
-            "Machine Learning", "Data Science", "Computer Vision", "NLP","ML","Deep Learning","CNN", "Neural Network",
-            "OpenCV",
-            "Problem Solving", "Communication Skills", "Teamwork", "Leadership", "Focus", "Discipline"
-        ]
-        # convert list of strings to sapCy Doc objects
-        patterns = [self.nlp.make_doc(skill) for skill in skills_list]
-        # Add patterns to the matcher
-        self.matcher.add("SKILL", patterns)
-        """
     
     def extract_requirements_and_skills(self, text: str) -> dict:
         """
@@ -76,11 +61,11 @@ class SkillExtractor:
         """
         if self.nlp is None or self.matcher is None:
             print("spaCy model or matcher not loaded. Cannot extract requirements.")
-            return{}
+            return {}
 
         doc = self.nlp(text)
 
-        # use PhraseMatcher to find predefined skills --
+        # use PhraseMatcher to find defined patterns --
         matches = self.matcher(doc)
 
         extracted_items = {}
