@@ -48,6 +48,12 @@ Upload CV document ---'
 
 #### v2.0.0
 - Score based on `understanding` the meaning of certain terms as skills.
+- App named JEMATS.
 - Use of NLP.
     By using Skill and Entity Extraction we can pull named entities like `Skills`, `Technologies`, `Qualifications`, `Job 
     Titles`, `Companies`, among others. Hence we can prioritize matches by customizing weights.
+
+#### v3.0.0
+- Use spaCy advanced Matcher to find patterns that indicate required skills, experience levels or qualifications.
+- Represent nature of job description requirements - optional, -required.
+- Score will penalize the absence of required skills and experience.

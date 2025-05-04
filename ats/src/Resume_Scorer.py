@@ -1,5 +1,5 @@
 """
-Methods to estimate similarity between lists of keywords: one list from job description, second list from applicant's resume.
+Methods to estimate similarity between categorized skills and prioritized requiements
 """
 import nltk
 import string
@@ -89,10 +89,9 @@ class TextProcessor:
 
 class ResumeScorer:
     """
-    Methods to calculate afinity score between a job description and a resume using TF-IDF and Cosine Similarity and NLP 
-    : scaPy Skill and entity extraction
+    Methods to calculate compatibility scores using TF-IDF and Prioritized Skill Matching
     """
-    def __init__(self, text_processor: TextProcessor, skill_extractor: SkillExtractor, language='english', tfidf_weight=0.6, skill_weight=0.4):
+    def __init__(self, text_processor: TextProcessor, skill_extractor: SkillExtractor, language='english', tfidf_weight=0.4, skill_match_weight=0.6):
         """
         Initializes the scorer with text processor dependency injection and scoring weights.
         """
@@ -100,29 +99,36 @@ class ResumeScorer:
         self.skill_extractor = skill_extractor
         self.scoring_language = text_processor.stop_words_lang if text_processor.stop_words_lang else language
         self.tfidf_weight= tfidf_weight
-        self.skill_weight = skill_weight
+        self.skill_match_weight = skill_match_weight
 
-        # weights validation
-        if self.tfidf_weight + self.skill_weight > 1.0:
-            print("Warning: TF-IDF weight and Skill weight Sum exceeds 1.0. Normalizing weights")
-            total_weight = self.tfidf_weight + self.skill_weight
+        # define weights for different categories of extracted requirements from Job Description
+        self.requirement_weights = {
+            "REQUIRED_SKILL_PHRASE": 1.5,
+            "YEARS_EXPERIENCE":1.2,
+            "QUALIFICATION_DEGREE": 1.0,
+            "KNOWLEDGE_OF": 0.8
+        }
+
+        # validation for main weights
+        if self.tfidf_weight + self.skill_match_weight > 1.0:
+            print("Warning: main scoring weights sum exceeds 1.0. Normalizing weights")
+            total_weight = self.tfidf_weight + self.skill_match_weight
             self.tfidf_weight /= total_weight
-            self.skill_weight /= total_weight
+            self.skill_match_weight /= total_weight
             
     def calculate_scores(self, jd_text: str, resume_text: str) -> dict:
         """
-        Estimate score using TF-IDF and Cosine Similarity, Skill Match score and a Combined Score
+        Estimate scores  using TF-IDF and Cosine Similarity, Prioritized Skill Match score and a Combined Score
         @params: jd_text: str
         @params: resume_text: str
         @returns: a dict containing three scores `tfidf_score`, `skill_score` and `combined_score`
                     Scores are floats between 0.0 and 1.0
         """
-        # -- TF-IDF score.
+        # --- 1. TF-IDF score.
         cleaned_resume_text = self.text_processor.clean_text(resume_text)
         cleaned_jd_text = self.text_processor.clean_text(jd_text)
 
         tfidf_score = 0.0
-
         if cleaned_jd_text and cleaned_resume_text:
             # Create a TfifdVectorizer
             vectorizer = TfidfVectorizer(stop_words=self.scoring_language)
@@ -138,31 +144,56 @@ class ResumeScorer:
             except Exception as e:
                 print(f"An error occurred during TF-IDF score calculation: {e}")
 
-        # -- Skill Match score.
-        jd_skills = self.skill_extractor.extract_skills(jd_text)
-        resume_skills = self.skill_extractor.extract_skills(resume_text)
+        # --- 2. Estimate Prioritized Skill Match Score.
+        # Extract categorized requirements from JD and capabilities from Resume
+        jd_extracted = self.skill_extractor.extract_requirements_and_skills(jd_text)
+        resume_extracted = self.skill_extractor.extract_requirements_and_skills(resume_text)
 
-        skill_score = 0.0
-        common_skills= []
+        total_possible_weighted_score = 0.0
+        achieved_weighted_score = 0.0
+        matched_items = {}
 
-        if jd_skills: # avoid division by ZERO
-            # use sets for comparison
-            jd_skills_set = set(jd_skills)
-            resume_skills_set = set(resume_skills)
+        # Callect ALL unique extracters items from resume for lookup.
+        all_resume_extracted_flat = set()
+        for label, items in resume_extracted.items():
+            all_resume_extracted_flat.update([item.lower().strip() for item in items ])
+        # identify missing items during scoring loop
+        missing_items = {} # store items that are in JD but not in resume.
+
+        for jd_label, jd_items in jd_extracted.items():
+            # Get the weight for this category from predefined weights, default to 0 if not found.
+            item_weight = self.requirement_weights.get(jd_label, 0.5) # default weight fot not mapped categories
             
-            # find common skills
-            common_skills = list(jd_skills_set.intersection(resume_skills_set))
-            # estimate skill score: Number of common skills / total Unique Jd skills
-            skill_score = len(common_skills) / len(jd_skills_set)
+            for jd_item_raw in jd_items:
+                jd_item = jd_item_raw.lower().strip() # JD item for comparison
+                total_possible_weighted_score += item_weight # summ / add  weight for each item in JD
 
-        # -- Estimate combined score
-        # make sure weights do not exceed 1.0 and distribute remanining weight if required.
-        combined_score = (self.tfidf_weight * tfidf_score) + (self.skill_weight * skill_score)
-            
-        # return all scores and common skills
+                # check if this cleaned JD item or similar variation exists in flattened set of resume extracted data.
+                if jd_item in all_resume_extracted_flat:
+                    achieved_weighted_score += item_weight
+                    if jd_label not in matched_items:
+                        matched_items[jd_label] = []
+                    matched_items[jd_label].append(jd_item_raw)
+                else:
+                    # item is missing
+                    if jd_label not in missing_items:
+                        missing_items[jd_label] = []
+                    missing_items[jd_label].append(jd_item_raw)
+
+        # Calculate the skill match score based on weighted matches
+        skill_match_score = 0.0
+        if total_possible_weighted_score > 0:
+            skill_match_score = achieved_weighted_score / total_possible_weighted_score
+
+        # --- 3.  Calculate combined Score ---
+        # validate that sum of weights don't exceed 1 and redistribute weights if required.
+        combined_score = (self.tfidf_weight * tfidf_score) + (self.skill_match_weight * skill_match_score)
+
+        # --- 4. Return all scores and list of matched items.
         return {
-                "tfidf_score": float(tfidf_score),
-                "skill_score": float(skill_score),
-                "combined_score":float(combined_score),
-                "common_skills": common_skills
+            "tfidf_score":float(tfidf_score),
+            "skill_score":float(skill_match_score),
+            "combined_score": float(combined_score),
+            "matched_items": matched_items, # items from JD matched by resume
+            "missing_items": missing_items
         }
