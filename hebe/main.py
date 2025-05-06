@@ -73,9 +73,8 @@ def detect_faces_mediapipe_youthify():
                 mask = filters_to_apply.create_marionette_mask(image_bgr.shape, face_landmarks)
                 cv2.imshow("Marionette Mask", mask)
                 # Apply filters
-                #image_bgr = filters_to_apply.apply_skin_smoothing(image_bgr, detection_results)
-                #image_bgr = filters_to_apply.enlarge_eyes(image_bgr, face_landmarks)
-                image_bgr = filters_to_apply.smooth_forehead(image_bgr, detection_results, face_landmarks)
+                image_bgr = filters_to_apply.apply_skin_smoothing(image_bgr, detection_results)
+                image_bgr = filters_to_apply.enlarge_eyes(image_bgr, face_landmarks)
 
                 # Draw face mesh landmarks
                 for face_landmark in mesh_results.multi_face_landmarks:
