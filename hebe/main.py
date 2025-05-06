@@ -1,78 +1,111 @@
 import cv2
+import mediapipe as mp
+import numpy as np 
 import os
-import face_alignment
-import torch
-from ultralytics import YOLO
+from filters import Filters
 
-def detect_faces_and_landmarks_yolo():
-    """captures video from webcam, detects faces using YOLOv5 and facial landmarks and displays result"""
-    video_capture = cv2.VideoCapture(int(os.environ.get("WEBCAM_INDEX", 1)))
+def detect_faces_mediapipe_youthify():
+    """
+    Captures video from webcam, detects faces and landmarks using MediaPipe
+    """
+    # Landmark indices for left and right marionette lines (adjust as needed)
+    LEFT_MARIONETTE_LANDMARKS_DEBUG = [129,203,205,216,212]
+    RIGHT_MARIONETTE_LANDMARKS_DEBUG = [358,423,436,432]
 
-    if not video_capture.isOpened():
-        print("Error: Could not open webcam")
+    filters_to_apply = Filters()
+
+    cap = cv2.VideoCapture(int(os.environ.get("WEBCAM_INDEX", 1)))
+    if not cap.isOpened():
+        print("Error: Could not open webcam.")
         return
 
-    # Set frame width and height
-    frame_width = 320
-    frame_height = 240
-    video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, frame_width)
-    video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, frame_height)
+    mp_face_detection = mp.solutions.face_detection
+    mp_drawing = mp.solutions.drawing_utils
+    mp_face_mesh = mp.solutions.face_mesh 
 
-    # Load YOLOv5 face detector
-    try:
-        face_model = YOLO('yolov5su.pt') # download this model
-        face_model.to('cuda' if torch.cuda.is_available() else 'cpu')
-    except Exception as e:
-        print(f"Error loading YOLOv5 face detection model: {e}")
-        return
+    with mp_face_detection.FaceDetection(
+        model_selection=1, min_detection_confidence=0.5) as face_detection, \
+         mp_face_mesh.FaceMesh(
+            max_num_faces = 1,
+            refine_landmarks = True,
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5) as face_mesh:
 
-    # Initialize the face aligment model using a lightweight 2D model.
-    try:
-        fa = face_alignment.FaceAlignment(face_alignment.LandmarksType.TWO_D, device='cuda' if torch.cuda.is_available() else 
-                                          'cpu', flip_input=True)
-    except Exception as e:
-        print(f"Error initializing face alignment model: {e}")
-        return
+        while cap.isOpened():
+            success, image_bgr = cap.read()
+            if not success:
+                print("Ignoring empty camera frame.")
+                continue
 
-    while True:
-        ret, frame = video_capture.read()
-
-        if not ret:
-            print("Error: Could not read frame.")
-            break
+            # flip image horizontally for later self view display
+            image_bgr = cv2.flip(image_bgr, 1)
+            image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
+            image_rgb.flags.writeable = False
+            detection_results = face_detection.process(image_rgb)
+            mesh_results = face_mesh.process(image_rgb)
+            image_rgb.flags.writeable = True
             
-        # Detect faces with YOLOv5
-        results = face_model(frame)
+            print(f"mesh results: {mesh_results}") 
+            
+            if mesh_results.multi_face_landmarks:
+                print(f"Number of faces detected in mesh: {len(mesh_results.multi_face_landmarks)}")
+                face_landmarks = mesh_results.multi_face_landmarks[0]
+                print(f"Number of landmarks in first face: {len(face_landmarks.landmark)}")
 
-        # get bounding boxes of detected faces
-        faces = []
-        for result in results:
-            if result.boxes is not None and len(result.boxes.xyxy) > 0:
-                faces = result.boxes.xyxy.cpu().numpy().astype(int) # x1, y1, x2, y2 format
+                # Draw debug circles at marionette landmark positions
+                ih, iw, _ = image_bgr.shape
+                for index in LEFT_MARIONETTE_LANDMARKS_DEBUG:
+                    try:
+                        x = int(face_landmarks.landmark[index].x * iw)
+                        y = int(face_landmarks.landmark[index].y * ih)
+                        cv2.circle(image_bgr, (x, y), 5, (0, 0, 255), -1)
+                    except IndexError:
+                        print(f"IndexError: Landmark index {index} out of range (0-{len(face_landmarks.landmark)-1})")
+
+                for index in RIGHT_MARIONETTE_LANDMARKS_DEBUG:
+                    try:
+                        x = int(face_landmarks.landmark[index].x * iw)
+                        y = int(face_landmarks.landmark[index].y * ih)
+                        cv2.circle(image_bgr, (x, y), 5, (0, 0, 255), -1)
+                    except IndexError:
+                        print(f"IndexError: Landmark index {index} out of range (0-{len(face_landmarks.landmark)-1})")
+
+                mask = filters_to_apply.create_marionette_mask(image_bgr.shape, face_landmarks)
+                cv2.imshow("Marionette Mask", mask)
+                # Apply filters
+                #image_bgr = filters_to_apply.apply_skin_smoothing(image_bgr, detection_results)
+                #image_bgr = filters_to_apply.enlarge_eyes(image_bgr, face_landmarks)
+                image_bgr = filters_to_apply.smooth_forehead(image_bgr, detection_results, face_landmarks)
+
+                # Draw face mesh landmarks
+                for face_landmark in mesh_results.multi_face_landmarks:
+                    mp_drawing.draw_landmarks(
+                        image=image_rgb,
+                        landmark_list = face_landmark,
+                        connections=mp_face_mesh.FACEMESH_TESSELATION,
+                        landmark_drawing_spec=mp_drawing.DrawingSpec(color=(0,255,0), thickness=1, circle_radius=1),
+                        connection_drawing_spec=mp_drawing.DrawingSpec(color=(255,0,0), thickness=1),
+                    )
+
+            # Display th BGR image convertes to BGR
+            cv2.imshow("MediaPipe Youthification", cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR))
+
+            if cv2.waitKey(5) & 0xFF == ord('q'):
                 break
-        
-        # Detect landmarks for each detected face
-        if faces is not None and len(faces) > 0:
-            for (x1, y1, x2, y2) in faces:
-                face_image = frame[y1:y2, x1:x2]
-                try:
-                    preds = fa.get_landmarks(face_image)
-                    if preds is not None:
-                        for landmark in preds[0]:
-                            cv2.circle(frame, (int(landmark[0]) + x1, int(landmark[1]) + y1), 1, (0, 0, 255), -1)
-                except Exception as e:
-                    print(f"Error detecting landmarks: {e}")
-                # draw bounding box
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0,255,0), 2)
 
-        cv2.imshow("Face and landmarks YOLO", frame)
-        # press q to exit the loop
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    video_capture.release()
+    cap.release()
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    detect_faces_and_landmarks_yolo()
+    detect_faces_mediapipe_youthify()
+
+
+
+
+
+
+
+
+
+
 
