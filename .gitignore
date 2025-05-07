@@ -168,3 +168,7 @@ log/
 .jpeg
 .webp
 .png
+
+.onnx
+*.onnx
+*.pem

@@ -1,2 +1,9 @@
 [ v432loopback ]
 https://www.dev47apps.com/droidcam/linux/
+
+https://github.com/charlynka/Facereader/tree/master
+
+
+// yunet
+https://gist.github.com/UnaNancyOwen/3f06d4a0d04f3a75cc62563aafbac332
+
