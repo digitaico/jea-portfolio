@@ -2,7 +2,7 @@ import cv2
 import mediapipe as mp
 import numpy as np 
 import os
-from filters import Filters
+from Filters import Filters
 
 def detect_faces_mediapipe_youthify():
     """
