@@ -1,55 +1,80 @@
-# Regenerate Resume_Scorer.py completely with error print removed and all debug prints.
-# Imports
-import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-import re
-from collections import defaultdict
-import math
-import sys
+# Orchestrator
+# Resume_Scorer.py
 
-# Import your other classes with capitalized filenames
-# Assuming Text_Processor, Skill_Extractor, Resume_Parser are in separate files
+import sys
+import os
+
+# Import the newly created scoring components
+# Use try-except blocks in case these files are not yet created or named correctly
+try:
+    from TfidfScorer import TfidfScorer
+except ImportError:
+    print("FATAL ERROR: Could not import TfidfScorer in Resume_Scorer. Please check TfidfScorer.py.")
+    class TfidfScorer: # Dummy class
+         def __init__(self, text_processor): pass
+         def calculate_similarity(self, text1, text2): return 0.0
+
+try:
+    from SkillComparer import SkillComparer
+except ImportError:
+    print("FATAL ERROR: Could not import SkillComparer in Resume_Scorer. Please check SkillComparer.py.")
+    class SkillComparer: # Dummy class
+         def __init__(self, skill_extractor, resume_parser, requirement_weights, section_weights): pass
+         def compare_skills(self, job_description, resume_text): return 0.0, 0.0, {}, {}
+
+try:
+    from ScoreAggregator import ScoreAggregator
+except ImportError:
+    print("FATAL ERROR: Could not import ScoreAggregator in Resume_Scorer. Please check ScoreAggregator.py.")
+    class ScoreAggregator: # Dummy class
+         def __init__(self, tfidf_weight, skill_match_weight): pass
+         def aggregate_and_format_scores(self, tfidf_raw_score, achieved_weighted_skill_score, total_possible_weighted_skill_score, matched_items, missing_items):
+              return {"error": "Aggregator dependency not loaded."}
+
+# Import original dependencies that Resume_Scorer still needs to pass along or use directly
+# Use try-except blocks
 try:
     from Text_Processor import Text_Processor
 except ImportError:
-    print("Warning: Could not import Text_Processor.")
-    # Define a dummy class or handle this as needed
-    class Text_Processor:
+    print("FATAL ERROR: Could not import Text_Processor in Resume_Scorer. Please check Text_Processor.py.")
+    class Text_Processor: # Dummy class
          def __init__(self, language='english'): pass
-         def process_text(self, text): return text
-         def tokenize(self, text): return text.split() # Simple fallback
+         def process_text(self, text): return text.lower().strip() if isinstance(text, str) else ""
+         language = 'unknown'
 
 try:
     from Skill_Extractor import Skill_Extractor
 except ImportError:
-    print("Warning: Could not import Skill_Extractor.")
-    class Skill_Extractor:
+    print("FATAL ERROR: Could not import Skill_Extractor in Resume_Scorer. Please check Skill_Extractor.py.")
+    class Skill_Extractor: # Dummy class
          def __init__(self, model_name=None, requirement_patterns=None, core_skill_phrases=None):
-              self.nlp = None # Ensure nlp is None if not loaded
-              self.matcher = None
-              self.phrase_matcher = None
-         def extract_requirements_and_skills(self, text, sections=None): return {} # Always return empty
+              self.nlp = None
+              self._functional = False
+         def extract_requirements_and_skills(self, text, sections=None): return {}
+
 
 try:
     from Resume_Parser import Resume_Parser
 except ImportError:
-    print("Warning: Could not import Resume_Parser.")
-    class Resume_Parser:
+    print("FATAL ERROR: Could not import Resume_Parser in Resume_Scorer. Please check Resume_Parser.py.")
+    class Resume_Parser: # Dummy class
          def __init__(self, model_name=None): self.nlp = None
          def parse_sections(self, text): return []
 
 
 class Resume_Scorer:
     """
-    Calculates similarity and skill match scores between a job description and a resume.
-    Uses Text_Processor, Skill_Extractor, and Resume_Parser dependencies.
+    Orchestrates the resume scoring process by utilizing dedicated modules
+    for TF-IDF calculation, skill comparison, and score aggregation.
+    Initializes and holds instances of TfidfScorer, SkillComparer, and ScoreAggregator.
+    Requires Text_Processor, Skill_Extractor, and Resume_Parser dependencies during initialization
+    to pass to the specialized scoring modules.
     """
     def __init__(self, text_processor: Text_Processor, skill_extractor: Skill_Extractor, resume_parser: Resume_Parser,
                  tfidf_weight: float = 0.5, skill_match_weight: float = 0.5,
                  requirement_weights: dict = None, section_weights: dict = None):
         """
-        Initializes the Resume_Scorer with its dependencies and scoring weights.
+        Initializes the Resume_Scorer and its component scoring modules.
 
         Args:
             text_processor (Text_Processor): An instance of Text_Processor.
@@ -57,430 +82,332 @@ class Resume_Scorer:
             resume_parser (Resume_Parser): An instance of Resume_Parser.
             tfidf_weight (float): The weight for the TF-IDF similarity score (0.0 to 1.0).
             skill_match_weight (float): The weight for the prioritized skill match score (0.0 to 1.0).
-                                         Ensure tfidf_weight + skill_match_weight <= 1.0.
             requirement_weights (dict, optional): Dictionary mapping skill labels to their base weights.
                                                   If None, uses defaults.
             section_weights (dict, optional): Dictionary mapping resume section headings to score multipliers.
                                               If None, uses defaults.
         """
+        print("\n--- Resume_Scorer (Orchestrator) Initialization ---")
+        # Store essential dependencies (passed to components)
         self.text_processor = text_processor
         self.skill_extractor = skill_extractor
         self.resume_parser = resume_parser
 
-        # Validate and store weights
-        if not (0.0 <= tfidf_weight <= 1.0 and 0.0 <= skill_match_weight <= 1.0 and (tfidf_weight + skill_match_weight) <= 1.0):
-             print("Warning: Scoring weights are invalid. Using default weights (0.5 TFIDF, 0.5 Skill Match).")
-             self.tfidf_weight = 0.5
-             self.skill_match_weight = 0.5
-        else:
-             self.tfidf_weight = tfidf_weight
-             self.skill_match_weight = skill_match_weight
-
-        # Define default weights if not provided
+        # Store configuration weights (passed to components)
+        self.tfidf_weight = tfidf_weight
+        self.skill_match_weight = skill_match_weight
+        # Define default weights if not provided (these are passed to SkillComparer and ScoreAggregator)
         self.requirement_weights = requirement_weights if requirement_weights is not None else self._define_default_requirement_weights()
         self.section_weights = section_weights if section_weights is not None else self._define_default_section_weights()
 
-        # Check if critical dependencies (with spaCy models) are functional
-        # Skill_Extractor and Resume_Parser have an nlp attribute if model loaded
-        self._functional = (hasattr(self.skill_extractor, 'nlp') and self.skill_extractor.nlp is not None) and \
-                           (hasattr(self.resume_parser, 'nlp') and self.resume_parser.nlp is not None) and \
-                           (hasattr(self.text_processor, 'language')) # Basic check for text processor
+
+        # --- Instantiate Scoring Component Modules ---
+        self.tfidf_scorer = None
+        self.skill_comparer = None
+        self.score_aggregator = None
+
+        # Check if base dependencies are valid instances before instantiating scoring components
+        is_base_deps_valid = isinstance(self.text_processor, Text_Processor) and \
+                             isinstance(self.skill_extractor, Skill_Extractor) and \
+                             isinstance(self.resume_parser, Resume_Parser)
+
+        if is_base_deps_valid:
+             try:
+                 # Instantiate TfidfScorer
+                 self.tfidf_scorer = TfidfScorer(text_processor=self.text_processor) # Pass Text_Processor
+
+                 # Instantiate SkillComparer
+                 self.skill_comparer = SkillComparer(
+                     skill_extractor=self.skill_extractor, # Pass Skill_Extractor
+                     resume_parser=self.resume_parser,     # Pass Resume_Parser
+                     requirement_weights=self.requirement_weights, # Pass weights config
+                     section_weights=self.section_weights        # Pass weights config
+                 )
+
+                 # Instantiate ScoreAggregator
+                 self.score_aggregator = ScoreAggregator(
+                     tfidf_weight=self.tfidf_weight,        # Pass weights config
+                     skill_match_weight=self.skill_match_weight
+                 )
+
+                 # Check if component modules initialized successfully (they have their own _functional checks)
+                 is_tfidf_functional = hasattr(self.tfidf_scorer, 'calculate_similarity') # Basic check for method existence
+                 is_skill_functional = hasattr(self.skill_comparer, '_functional') and self.skill_comparer._functional
+                 is_aggregator_functional = hasattr(self.score_aggregator, 'aggregate_and_format_scores') # Basic check for method existence
 
 
-        # Further check if matchers have rules loaded in Skill_Extractor
-        if self._functional:
-            matcher_has_rules = hasattr(self.skill_extractor, 'matcher') and self.skill_extractor.matcher is not None and len(self.skill_extractor.matcher) > 0
-            phrase_matcher_has_rules = hasattr(self.skill_extractor, 'phrase_matcher') and self.skill_extractor.phrase_matcher is not None and len(self.skill_extractor.phrase_matcher) > 0
+                 # Resume_Scorer is functional only if all component modules and base dependencies are functional
+                 self._functional = is_base_deps_valid and is_tfidf_functional and is_skill_functional and is_aggregator_functional
 
-            # Scorer is only functional for skill match if extractor has rules in at least one matcher
-            if not (matcher_has_rules or phrase_matcher_has_rules):
-                 print("Warning: Skill_Extractor initialized but has no rules loaded in Matcher or PhraseMatcher. Skill match score will be 0.")
-                 # Set skill weight to 0 if no rules are loaded to avoid errors and signal issue
-                 # Adjust total weight if skill weight becomes 0
-                 if self.skill_match_weight > 0:
-                      self.tfidf_weight += self.skill_match_weight # Add original skill weight to tfidf
+                 if self._functional:
+                      print("Resume_Scorer (Orchestrator) and scoring components initialized successfully.")
+                      # Report functional status of components
+                      print(f"Component Status: TfidfScorer Functional={is_tfidf_functional}, SkillComparer Functional={is_skill_functional}, ScoreAggregator Functional={is_aggregator_functional}")
+                 else:
+                      print("Warning: Resume_Scorer (Orchestrator) initialized but one or more scoring components are not fully functional.")
+                      print(f"Component Status: TfidfScorer Functional={is_tfidf_functional}, SkillComparer Functional={is_skill_functional}, ScoreAggregator Functional={is_aggregator_functional}")
+                      # If not functional, set weights to 0 to ensure 0 scores are returned
+                      self.tfidf_weight = 0.0
                       self.skill_match_weight = 0.0
-                      print(f"Adjusted weights: TFIDF={self.tfidf_weight}, Skill Match={self.skill_match_weight}")
 
-            # Check if text processor language is set
-            if not hasattr(self.text_processor, 'language') or not self.text_processor.language:
-                 print("Warning: Text_Processor instance has no language attribute. Ensure language is set for processing.")
-                 # This might affect text processing but won't make the scorer non-functional itself
+
+             except Exception as e:
+                  print(f"Error during Resume_Scorer component initialization: {e}")
+                  import traceback
+                  traceback.print_exc()
+                  self._functional = False
+                  print("Resume_Scorer (Orchestrator) initialized but is NOT functional due to component initialization errors.")
+                  # Set weights to 0 if components fail to initialize
+                  self.tfidf_weight = 0.0
+                  self.skill_match_weight = 0.0
 
         else:
-             print("Warning: Core dependencies (Skill_Extractor or Resume_Parser) are not functional. TF-IDF and Skill Match scores will be 0.")
-             # If dependencies are not functional, set both weights to 0 to return 0 scores
+             print("Fatal Error: Resume_Scorer (Orchestrator) could not initialize due to invalid base dependencies (Text_Processor, Skill_Extractor, or Resume_Parser).")
+             print("Please check the imports and initialization of these base dependencies in app.py.")
+             self._functional = False
+             # Set weights to 0 if base dependencies are invalid
              self.tfidf_weight = 0.0
              self.skill_match_weight = 0.0
+
+
+        print("------------------------------------------------")
 
 
     def _define_default_requirement_weights(self):
         """Defines default base weights for different requirement categories."""
         # Default weights if none are provided
+        # Align keys with Skill_Extractor pattern labels and 'CORE_SKILL' phrase label
         return {
             "REQUIRED_SKILL_PHRASE": 1.5,
             "YEARS_EXPERIENCE": 1.2,
             "QUALIFICATION_DEGREE": 1.0,
             "KNOWLEDGE_OF": 0.8,
-            "CORE_SKILL": 1.0, # Default weight for core skills
+            "CORE_SKILL": 1.0, # Default weight for core skills matched by PhraseMatcher
             "Unidentified": 0.2, # Default weight for items matched by general patterns or in unidentified sections
+            # Add weights for any other custom pattern labels you add in Skill_Extractor
         }
 
     def _define_default_section_weights(self):
         """Defines default score multipliers for different resume sections."""
         # Default multipliers if none are provided
+        # Align keys with potential section headings from Resume_Parser
+        # Use lower() or normalized forms in keys if Resume_Parser outputs variations
         return {
              "Experience": 1.5,
-             "Skills": 1.0,
-             "Education": 0.8,
-             "Projects": 1.1,
-             "Summary": 0.9,
-             "Unidentified (Header)": 0.5,
-             "Unidentified (Footer)": 0.5,
-             "Unidentified (Full Document)": 0.5, # If no sections found by parser
-             "Unidentified": 0.5, # Fallback if section is labeled "Unidentified" by parser/extractor
+             "Work Experience": 1.5, # Also map variations
+             "Employment History": 1.5, # Also map variations
+             "Skills": 1.0,     # Items in Skills get base multiplier
+             "Technical Skills": 1.0, # Also map variations
+             "Professional Skills": 1.0, # Also map variations
+             "Education": 0.8,  # Items in Education get 20% less multiplier
+             "Projects": 1.1,   # Small bonus for items in Projects
+             "Summary": 0.9,    # Slightly lower
+             "About": 0.9,      # Also map variations
+             "Profile": 0.9,    # Also map variations
+             "Languages": 1.0,  # Languages section
+             "Awards": 0.7,     # Example for other sections
+             "Certifications": 1.1, # Example for other sections
+             "Licenses": 1.1,   # Example for other sections
+             "Publications": 0.6, # Example for other sections
+             "Presentations": 0.6, # Example for other sections
+             "Volunteer Experience": 0.7, # Example for other sections
+             "Interests": 0.3,  # Example for other sections
+             "References": 0.1, # Items in References are usually low value
+             "Contact": 0.1,    # Items in Contact are usually low value
+             "Objective": 0.9,
+             "Unidentified (Header)": 0.5, # Low multiplier for items before first heading
+             "Unidentified (Footer)": 0.5, # Low multiplier for items after last heading
+             "Unidentified (Full Document)": 0.5, # Low multiplier if no sections found
+             "Unidentified": 0.5, # Fallback if section is labeled "Unidentified" by parser/extractor or not in list
         }
 
 
     def calculate_scores(self, job_description: str, resume_text: str) -> dict:
         """
-        Calculates the TF-IDF similarity, prioritized skill match score, and combined score.
+        Orchestrates the scoring process by calling methods on the component modules.
 
         Args:
             job_description (str): The raw text of the job description.
             resume_text (str): The raw text of the resume.
 
         Returns:
-            dict: A dictionary containing 'tfidf_score', 'prioritized_skill_score',
-                  'combined_score', 'matched_items', and 'missing_items'.
+            dict: The final results dictionary from ScoreAggregator, or an error dictionary
+                  if the Resume_Scorer or its components are not functional.
         """
-        # Ensure the scorer instance itself is functional
+        # Ensure the Resume_Scorer instance and its components are functional
         if not hasattr(self, '_functional') or not self._functional:
-             print("Error: Scorer instance is not functional. Returning zero scores.")
+             print("Error: Resume_Scorer (Orchestrator) instance is not functional. Cannot calculate scores. Check initialization logs.")
              return {
                 "tfidf_score": 0.0,
                 "prioritized_skill_score": 0.0,
+                "weighted_tfidf_score": 0.0,
+                "weighted_prioritized_skill_score": 0.0,
                 "combined_score": 0.0,
                 "matched_items": {},
-                "missing_items": {}
+                "missing_items": {},
+                "error": "Scoring orchestrator not functional."
              }
 
-        # --- 1. Text Processing (Language handled by Text_Processor instance) ---
-        print("\n--- Running Text Processing ---")
-        jd_processed = self.text_processor.process_text(job_description)
-        resume_processed = self.text_processor.process_text(resume_text)
-        print("------------------------------")
-
-        # Check if processed texts are empty
-        if not jd_processed or not resume_processed:
-             print("Warning: Processed text is empty. Cannot calculate scores.")
-             return {
-                "tfidf_score": 0.0,
-                "prioritized_skill_score": 0.0,
-                "combined_score": 0.0,
-                "matched_items": {},
-                "missing_items": {}
-             }
-
+        # --- 1. Text Processing ---
+        # Text processing is still handled by Text_Processor, called directly here or within TfidfScorer/SkillComparer if they need processed text
+        # TfidfScorer and SkillComparer.compare_skills *should* receive raw text and handle processing internally as needed.
+        # Let's adjust: The external modules should handle their own text processing via the passed Text_Processor instance.
 
         # --- 2. TF-IDF Similarity Score ---
-        # Only calculate if TF-IDF weight is positive
-        tfidf_score = 0.0
-        if self.tfidf_weight > 0 and jd_processed and resume_processed:
-            print("--- Calculating TF-IDF Score ---")
-            try:
-                # TfidfVectorizer expects a list of documents
-                documents = [jd_processed, resume_processed]
-                tfidf_vectorizer = TfidfVectorizer()
-                tfidf_matrix = tfidf_vectorizer.fit_transform(documents)
-
-                # Calculate cosine similarity between the two documents
-                # similarity_matrix is a 2x2 matrix, we need the non-identity similarity
-                similarity_matrix = cosine_similarity(tfidf_matrix)
-                tfidf_score = similarity_matrix[0, 1] # Similarity between doc 0 (JD) and doc 1 (Resume)
-                print(f"TF-IDF Raw Score: {tfidf_score}")
-            except Exception as e:
-                print(f"Error calculating TF-IDF score: {e}")
-                tfidf_score = 0.0 # Set score to 0 on error
-            print("------------------------------")
+        # Check if the tfidf_scorer component is functional before using
+        if self.tfidf_scorer and hasattr(self.tfidf_scorer, 'calculate_similarity'):
+             print("Calling TfidfScorer.calculate_similarity...")
+             tfidf_raw_score = self.tfidf_scorer.calculate_similarity(job_description, resume_text) # Pass raw texts
+             print(f"Received TF-IDF raw score: {tfidf_raw_score:.4f}")
         else:
-             print("Skipping TF-IDF calculation as weight is 0 or text is empty.")
+             print("Warning: TfidfScorer component is not functional. TF-IDF score will be 0.")
+             tfidf_raw_score = 0.0 # Default to 0 if component is not ready
 
 
         # --- 3. Prioritized Skill Match Score ---
-        # Only calculate if skill match weight is positive and dependencies are functional with rules
-        skill_match_score = 0.0
-        total_possible_weighted_score = 0.0
-        achieved_weighted_score = 0.0
-
-        # Use defaultdict to simplify appending items to categories
-        cleaned_matched_items = defaultdict(list)
-        cleaned_missing_items = defaultdict(list)
-
-        # Check if Skill_Extractor is functional and has rules before attempting extraction
-        matcher_rules = len(self.skill_extractor.matcher) if hasattr(self.skill_extractor, 'matcher') and self.skill_extractor.matcher is not None else 0
-        phrase_matcher_rules = len(self.skill_extractor.phrase_matcher) if hasattr(self.skill_extractor, 'phrase_matcher') and self.skill_extractor.phrase_matcher is not None else 0
-
-        if self.skill_match_weight > 0 and self._functional and (matcher_rules > 0 or phrase_matcher_rules > 0):
-            print("--- Calculating Prioritized Skill Match Score ---")
-            try:
-                # --- Extract Categorized Items (Using the Skill_Extractor dependency) ---
-                # JD extraction: pass raw text, no sections
-                print("\nRunning Skill_Extractor on JD...")
-                jd_extracted = self.skill_extractor.extract_requirements_and_skills(text=job_description, sections=None)
-                print("------------------------------")
-
-                # Resume extraction: pass raw text and parsed sections
-                # Use Resume_Parser to get sections (Parser needs raw text)
-                print("\nRunning Resume_Parser on Resume...")
-                resume_sections = self.resume_parser.parse_sections(resume_text)
-                print(f"Resume Sections Identified: {resume_sections}")
-                print("------------------------------")
-
-                print("\nRunning Skill_Extractor on Resume...")
-                resume_extracted_with_sections = self.skill_extractor.extract_requirements_and_skills(text=resume_text, sections=resume_sections)
-                print("------------------------------")
-
-
-                # Check if extraction yielded results for JD or Resume
-                if not jd_extracted and not resume_extracted_with_sections:
-                    print("Warning: Skill extraction returned no items for JD or Resume.")
-                    # Scores remain 0.0, matched/missing remain empty
-
-
-                # --- Collect ALL unique extracted items (text only) from Resume for easy lookup ---
-                all_resume_extracted_flat_text_only = set()
-                if resume_extracted_with_sections:
-                     print("\nFlattening Resume extracted items for lookup...")
-                     try:
-                         for label, items_list in resume_extracted_with_sections.items():
-                              # Ensure items_list is a list of dicts
-                              if isinstance(items_list, list):
-                                   for item_info in items_list:
-                                        # Ensure item_info is a dict and has the 'text' key
-                                        if isinstance(item_info, dict) and 'text' in item_info:
-                                             all_resume_extracted_flat_text_only.add(item_info['text'].lower().strip()) # Add cleaned text to set
-                                        else:
-                                             print(f"Warning: Unexpected item_info format during resume flattening: {item_info}")
-                              else:
-                                   print(f"Warning: Unexpected items_list format for label '{label}' during resume flattening: {items_list}")
-
-                         print(f"Flattened Resume Extracted Items (Text Only Set) created with {len(all_resume_extracted_flat_text_only)} unique items.")
-                     except Exception as e:
-                         print(f"Error flattening resume extracted items: {e}")
-                         all_resume_extracted_flat_text_only = set() # Ensure it's a set on error
-                     print("------------------------------")
-
-
-                # --- Compare JD items to Resume items ---
-                print("\nComparing JD extracted items to Resume extracted items...")
-                if jd_extracted:
-                    # Iterate through the extracted requirements from the Job Description
-                    for jd_label, jd_items_list_raw in jd_extracted.items():
-                        # Get the base weight for this category from the config
-                        # Use .get with a default if label not found in config (defaults to Unidentified weight)
-                        base_item_weight = self.requirement_weights.get(jd_label, self.requirement_weights.get("Unidentified", 0.1)) # Default to 0.1 if Unidentified not found
-
-
-                        # Add to total possible weighted score if item has a positive weight
-                        # Every item extracted from the JD contributes to the total possible score
-                        if base_item_weight > 0 and isinstance(jd_items_list_raw, list): # Ensure it's a list
-                             total_possible_weighted_score += base_item_weight * len(jd_items_list_raw)
-                        elif base_item_weight <= 0 and isinstance(jd_items_list_raw, list):
-                             print(f"Warning: JD items found for label '{jd_label}' but its base weight is {base_item_weight}. Not added to total possible score.")
-                        elif not isinstance(jd_items_list_raw, list):
-                              print(f"Warning: Expected list of JD items for label '{jd_label}' but got {type(jd_items_list_raw)}. Skipping for scoring.")
-                              continue # Skip to the next JD item
-
-
-                        # Now iterate through each specific item within the JD label
-                        if isinstance(jd_items_list_raw, list): # Re-check type safety
-                             for jd_item_text_raw in jd_items_list_raw:
-                                  if not isinstance(jd_item_text_raw, str):
-                                       print(f"Warning: Expected string item for label '{jd_label}' but got {type(jd_item_text_raw)}. Skipping.")
-                                       continue # Skip to the next item
-
-
-                                  jd_item_text = jd_item_text_raw.lower().strip() # Clean JD item text for comparison
-
-                                  print(f"Checking JD item: '{jd_item_text}' (Label: {jd_label})...")
-
-                                  # --- Check if this cleaned JD item text exists in the flattened set of Resume item texts ---
-                                  if jd_item_text in all_resume_extracted_flat_text_only:
-                                      # Item is potentially matched. Now find where it was matched in the Resume
-                                      # to apply section weights.
-                                      achieved_item_weight_for_this_item = 0.0 # Weight for this specific item match
-                                      max_section_multiplier = 0.0
-                                      sections_where_matched = set()
-
-                                      # Collect all matching item_info dicts from the detailed resume extraction
-                                      matching_resume_items_info = []
-
-
-                                      # Find the corresponding item(s) in the resume_extracted_with_sections
-                                      if resume_extracted_with_sections: # Only search if resume extraction had results
-                                           for resume_label, resume_items_list in resume_extracted_with_sections.items():
-                                                if isinstance(resume_items_list, list): # Ensure items_list is a list
-                                                     for item_info in resume_items_list: # item_info should be a dict {'text': '...', 'section': '...'}
-                                                          # Ensure item_info is a dict and has the 'text' key
-                                                          if isinstance(item_info, dict) and 'text' in item_info and item_info['text'].lower().strip() == jd_item_text: # Match on cleaned text
-                                                               matching_resume_items_info.append(item_info) # Found a match, add its info
-                                                else:
-                                                     print(f"Warning: Unexpected items_list format for resume label '{resume_label}' during detailed match lookup: {resume_items_list}")
-
-
-                                      # --- The print statement that caused the error was previously here ---
-                                      # REMOVED: print(f"  - Matched item info from Resume: {matching_resume_items_info}") # <--- This line was removed
-
-
-                                      if matching_resume_items_info: # Check if any matching item_info was found
-                                          print(f"  -> Found matches in Resume details ({len(matching_resume_items_info)} instances).")
-                                          # Apply section weights. Get the maximum section multiplier
-                                          # from all the sections where this item was found in the resume.
-                                          for item_info in matching_resume_items_info: # Iterate through all places it was found
-                                               # Ensure item_info is a dict and has the 'sections' key, and 'sections' is a list
-                                               if isinstance(item_info, dict) and 'sections' in item_info and isinstance(item_info['sections'], list):
-                                                    for section_heading in item_info['sections']: # For each section it was listed in
-                                                         # Use .get for safety, default multiplier is 1.0 if section not in config
-                                                         # Use .get for safety when looking up section_weights
-                                                         section_multiplier = self.section_weights.get(section_heading, self.section_weights.get("Unidentified", 1.0))
-                                                         max_section_multiplier = max(max_section_multiplier, section_multiplier) # Keep track of the max
-                                                         sections_where_matched.add(section_heading) # Collect unique sections it was in
-                                               else:
-                                                    print(f"Warning: Unexpected item_info format or missing/invalid 'sections' key during section processing: {item_info}. Applying Unidentified multiplier.")
-                                                    # If sections data is bad, treat multiplier as default
-                                                    section_multiplier = self.section_weights.get("Unidentified", 1.0) # Use Unidentified default
-                                                    max_section_multiplier = max(max_section_multiplier, section_multiplier)
-                                                    sections_where_matched.add("Unidentified") # Add unidentified section for reporting
-
-
-                                          # Calculate the achieved weight for this specific item match
-                                          # Base JD weight * maximum section multiplier where found
-                                          # Ensure base_item_weight is > 0 before multiplying
-                                          achieved_item_weight_for_this_item = base_item_weight * max_section_multiplier if base_item_weight > 0 else 0.0
-                                          achieved_weighted_score += achieved_item_weight_for_this_item # Adding to total achieved
-
-                                          # Record the matched item, including where it was found
-                                          # Use the raw text from JD for output, not the cleaned one
-                                          print(f"  -> Matched item '{jd_item_text_raw}' (Label: {jd_label}) matched with weight {achieved_item_weight_for_this_item} (Base: {base_item_weight}, Max Multiplier: {max_section_multiplier}). Sections: {list(sections_where_matched)}")
-
-                                          cleaned_matched_items[jd_label].append({
-                                              "text": jd_item_text_raw, # Store original JD text
-                                              "matched_in_sections": list(sections_where_matched), # Convert set to list for output
-                                              "achieved_weight": float(achieved_item_weight_for_this_item) # Store calculated weight
-                                          })
-
-                                      else:
-                                           print(f"  -> Item '{jd_item_text_raw}' (Label: {jd_label}) found in flat set but no detailed match info found. Not added to matched items.")
-                                           # Item was in the flat set, but we couldn't find its detailed info.
-                                           # This shouldn't happen if extraction is consistent, but handle defensively.
-                                           # It's found, so NOT added to missing items. It just doesn't contribute to score.
-
-
-                                  else: # Item is missing!
-                                      print(f"  -> Item '{jd_item_text_raw}' (Label: {jd_label}) NOT found in Resume flat set. Added to missing items.")
-                                      # Only add to missing if it wasn't found at all
-                                      # Append the raw JD text for the missing item
-                                      cleaned_missing_items[jd_label].append(jd_item_text_raw)
-                        else:
-                             print(f"Error: Expected jd_items_list_raw for label '{jd_label}' to be a list but got {type(jd_items_list_raw)}. Cannot iterate items.")
-
-                else:
-                    print("Warning: No items extracted from JD. Cannot calculate skill match score.")
-
-
-                print("Comparison complete for JD items.")
-                print("-" * 25)
-
-
-            except Exception as e:
-                print(f"An error occurred during skill match calculation:")
-                import traceback
-                traceback.print_exc() # Print full traceback to the console
-                skill_match_score = 0.0 # Set score to 0 on error
-                # Matched/missing items might be partially populated, or empty depending on where error occurred
-                # Keep whatever was populated for debugging, or clear if preferred.
-                # Clearing for consistency on error:
-                cleaned_matched_items = {} # Clear on error
-                cleaned_missing_items = {} # Clear on error
-
-
+        # Check if the skill_comparer component is functional before using
+        if self.skill_comparer and hasattr(self.skill_comparer, 'compare_skills') and hasattr(self.skill_comparer, '_functional') and self.skill_comparer._functional:
+             print("Calling SkillComparer.compare_skills...")
+             # Pass raw texts; SkillComparer handles parsing and extraction internally
+             achieved_weighted_skill_score, total_possible_weighted_skill_score, matched_items, missing_items = self.skill_comparer.compare_skills(job_description, resume_text)
+             print(f"Received skill comparison results: Achieved={achieved_weighted_skill_score:.4f}, Possible={total_possible_weighted_skill_score:.4f}, Matched={len(matched_items)}, Missing={len(missing_items)}")
         else:
-             print("Skipping Prioritized Skill Match calculation as weight is 0 or dependencies are not functional/have no rules.")
+             print("Warning: SkillComparer component is not functional. Skill match score will be 0.")
+             achieved_weighted_skill_score = 0.0
+             total_possible_weighted_skill_score = 0.0
+             matched_items = {}
+             missing_items = {}
 
 
-        # --- 4. Calculate Final Scores ---
-        print("\n--- Final Score Calculation ---")
-        # Ensure total_possible_weighted_score is not zero before dividing
-        if total_possible_weighted_score > 0:
-             skill_match_score = achieved_weighted_score / total_possible_weighted_score
-             print(f"Skill Match Raw Score: {achieved_weighted_score} / {total_possible_weighted_score} = {skill_match_score}")
-        elif self.skill_match_weight > 0: # If skill weight is > 0 but total possible is 0, something is off
-             print("Warning: Skill match weight > 0 but total possible weighted score is 0. Skill match score is 0.")
-             skill_match_score = 0.0 # Ensure it's 0
-
-        print(f"TF-IDF Score (weighted): {tfidf_score} * {self.tfidf_weight}")
-        print(f"Skill Match Score (weighted): {skill_match_score} * {self.skill_match_weight}")
-
-        combined_score = (tfidf_score * self.tfidf_weight) + (skill_match_score * self.skill_match_weight)
-        print(f"Combined Score: {combined_score}")
-        print("------------------------------")
-
-        # --- 5. Prepare Results ---
-        # Convert defaultdict to regular dict for jsonify
-        final_matched_items = dict(cleaned_matched_items)
-        final_missing_items = dict(cleaned_missing_items)
-
-        # Filter out empty categories from matched and missing items for cleaner output
-        final_matched_items_filtered = {k: v for k, v in final_matched_items.items() if v}
-        final_missing_items_filtered = {k: v for k, v in final_missing_items.items() if v}
+        # --- 4. Aggregate and Format Scores ---
+        # Check if the score_aggregator component is functional before using
+        if self.score_aggregator and hasattr(self.score_aggregator, 'aggregate_and_format_scores'):
+             print("Calling ScoreAggregator.aggregate_and_format_scores...")
+             # Pass the raw TF-IDF score and the results from skill comparison
+             final_results = self.score_aggregator.aggregate_and_format_scores(
+                 tfidf_raw_score, achieved_weighted_skill_score, total_possible_weighted_skill_score, matched_items, missing_items
+             )
+             print("Score aggregation and formatting complete.")
+        else:
+             print("Warning: ScoreAggregator component is not functional. Cannot finalize scores.")
+             # Return basic info if aggregator failed
+             final_results = {
+                "tfidf_score": float(tfidf_raw_score),
+                "prioritized_skill_score": achieved_weighted_skill_score / total_possible_weighted_skill_score if total_possible_weighted_skill_score > 0 else 0.0,
+                "weighted_tfidf_score": float(tfidf_raw_score * self.tfidf_weight), # Best guess at weighted score if aggregator failed
+                "weighted_prioritized_skill_score": float(achieved_weighted_skill_score * self.skill_match_weight / total_possible_weighted_skill_score if total_possible_weighted_skill_score > 0 else 0.0), # Best guess
+                "combined_score": 0.0, # Cannot confidently calculate combined if aggregator failed
+                "matched_items": matched_items,
+                "missing_items": missing_items,
+                "error": "Score aggregator component not functional. Scores may be incomplete."
+             }
 
 
+        # --- 5. Return Final Results ---
+        return final_results
+
+
+    # --- Define default weights for SkillComparer and ScoreAggregator ---
+    # These methods define the default structure if no weights dicts are passed to __init__
+    # They are called during Resume_Scorer.__init__ and the results are passed to component inits.
+    def _define_default_requirement_weights(self):
+        """Defines default base weights for different requirement categories."""
+        # Default weights if none are provided
+        # Align keys with Skill_Extractor pattern labels and 'CORE_SKILL' phrase label
         return {
-            "tfidf_score": float(tfidf_score),
-            "prioritized_skill_score": float(skill_match_score),
-            "combined_score": float(combined_score),
-            "matched_items": final_matched_items_filtered,
-            "missing_items": final_missing_items_filtered
+            "REQUIRED_SKILL_PHRASE": 1.5,
+            "YEARS_EXPERIENCE": 1.2,
+            "QUALIFICATION_DEGREE": 1.0,
+            "KNOWLEDGE_OF": 0.8,
+            "CORE_SKILL": 1.0, # Default weight for core skills matched by PhraseMatcher
+            "Unidentified": 0.2, # Default weight for items matched by general patterns or in unidentified sections
+            # Add weights for any other custom pattern labels you add in Skill_Extractor
+        }
+
+    def _define_default_section_weights(self):
+        """Defines default score multipliers for different resume sections."""
+        # Default multipliers if none are provided
+        # Align keys with potential section headings from Resume_Parser
+        # Use lower() or normalized forms in keys if Resume_Parser outputs variations
+        return {
+             "Experience": 1.5,
+             "Work Experience": 1.5, # Also map variations
+             "Employment History": 1.5, # Also map variations
+             "Skills": 1.0,     # Items in Skills get base multiplier
+             "Technical Skills": 1.0, # Also map variations
+             "Professional Skills": 1.0, # Also map variations
+             "Education": 0.8,  # Items in Education get 20% less multiplier
+             "Projects": 1.1,   # Small bonus for items in Projects
+             "Summary": 0.9,    # Slightly lower
+             "About": 0.9,      # Also map variations
+             "Profile": 0.9,    # Also map variations
+             "Languages": 1.0,  # Languages section
+             "Awards": 0.7,     # Example for other sections
+             "Certifications": 1.1, # Example for other sections
+             "Licenses": 1.1,   # Example for other sections
+             "Publications": 0.6, # Example for other sections
+             "Presentations": 0.6, # Example for other sections
+             "Volunteer Experience": 0.7, # Example for other sections
+             "Interests": 0.3,  # Example for other sections
+             "References": 0.1, # Items in References are usually low value
+             "Contact": 0.1,    # Items in Contact are usually low value
+             "Objective": 0.9,
+             "Unidentified (Header)": 0.5, # Low multiplier for items before first heading
+             "Unidentified (Footer)": 0.5, # Low multiplier for items after last heading
+             "Unidentified (Full Document)": 0.5, # Low multiplier if no sections found
+             "Unidentified": 0.5, # Fallback if section is labeled "Unidentified" by parser/extractor or not in list
         }
 
 
 # --- Example Usage (Optional, for testing the module directly) ---
 if __name__ == "__main__":
-    print("Running Resume_Scorer.py directly for testing.")
+    print("Running Resume_Scorer.py (Orchestrator) directly for testing.")
 
     # Define configuration for the example usage (should match app.py or be consistent)
-    example_model_name = 'en_core_web_sm'
+    example_model_name = 'en_core_web_sm' # Use sm for faster testing
     example_tfidf_weight = 0.3
     example_skill_weight = 0.7
+
+    # Define weights for passing to the orchestrator (these will be passed to components)
     example_requirement_weights = {
-        "EXAMPLE_TECH_SKILL": 1.0,
-        "EXAMPLE_EXP_PHRASE": 1.2,
-        "EXAMPLE_QUALIFICATION": 1.0,
+        "REQUIRED_SKILL_PHRASE": 1.5,
+        "YEARS_EXPERIENCE": 1.2,
+        "QUALIFICATION_DEGREE": 1.0,
+        "KNOWLEDGE_OF": 0.8,
         "CORE_SKILL": 1.0,
-        "Unidentified": 0.1,
+        "Unidentified": 0.2,
+        "EXAMPLE_TECH_SKILL": 1.0,
     }
     example_section_weights = {
          "Experience": 1.5,
          "Skills": 1.0,
          "Education": 0.8,
+         "Projects": 1.1,
+         "Summary": 0.9,
+         "Unidentified (Header)": 0.5,
+         "Unidentified (Footer)": 0.5,
+         "Unidentified (Full Document)": 0.5,
          "Unidentified": 0.5,
+         "Languages": 1.0
     }
 
-    # Define simple example patterns consistent with the weights
+    # Define example patterns and phrases for Skill_Extractor dependency
     example_skill_patterns = [
+         ("REQUIRED_SKILL_PHRASE", [[{"LOWER": "required"}, {"LOWER": "skill"}], [{"LOWER": "must"}, {"LOWER": "have"}]]),
          ("EXAMPLE_TECH_SKILL", [[{"LOWER": "python"}], [{"LOWER": "java"}], [{"LOWER": "flask"}]]),
-         ("EXAMPLE_EXP_PHRASE", [[{"POS": "NUM", "OP": "+"}, {"LOWER": "years"}, {"LOWER": "of"}, {"LOWER": "experience"}]]),
-         ("EXAMPLE_QUALIFICATION", [[{"LOWER": "bachelor's"}], [{"LOWER": "master's"}]]),
+         ("YEARS_EXPERIENCE", [[{"POS": "NUM", "OP": "+"}, {"LOWER": "years"}, {"LOWER": "of", "OP": "?"}, {"LOWER": "experience"}]]),
+         ("QUALIFICATION_DEGREE", [[{"LOWER": {"IN": ["bachelor's", "master's"]}}, {"LOWER": "degree"}]]),
     ]
-    example_core_phrases = ["Python", "Flask"]
+    example_core_phrases = ["Python", "Flask", "SQL", "Java", "Docker", "Git", "AWS"]
 
 
-    # Instantiate dependencies for example
-    # Text Processor doesn't need model, but requires language
+    # --- Instantiate Base Dependencies for Example ---
+    print("\n--- Initializing Base Dependencies for Resume_Scorer Example ---")
+    # Text Processor needs language
     example_text_processor = Text_Processor(language='english')
 
-    # Skill Extractor needs model and patterns/phrases
+    # Skill Extractor needs model and patterns/phrases config
+    # Pass the example patterns and core phrases
     example_skill_extractor = Skill_Extractor(
         model_name=example_model_name,
         requirement_patterns=example_skill_patterns,
@@ -489,63 +416,87 @@ if __name__ == "__main__":
 
     # Resume Parser needs model
     example_resume_parser = Resume_Parser(model_name=example_model_name)
+    print("---------------------------------------------------------------")
 
 
-    # Instantiate Resume_Scorer with dependencies and weights
-    scorer = Resume_Scorer(
-        text_processor=example_text_processor,
-        skill_extractor=example_skill_extractor,
-        resume_parser=example_resume_parser,
-        tfidf_weight=example_tfidf_weight,
+    # Instantiate the Resume_Scorer Orchestrator
+    scorer_orchestrator = Resume_Scorer(
+        text_processor=example_text_processor, # Pass base dependency
+        skill_extractor=example_skill_extractor, # Pass base dependency
+        resume_parser=example_resume_parser, # Pass base dependency
+        tfidf_weight=example_tfidf_weight, # Pass weights config
         skill_match_weight=example_skill_weight,
-        requirement_weights=example_requirement_weights,
-        section_weights=example_section_weights
+        requirement_weights=example_requirement_weights, # Pass weights config
+        section_weights=example_section_weights      # Pass weights config
     )
 
-    # Check if the scorer instance is functional before running score calculation
-    if not hasattr(scorer, '_functional') or not scorer._functional:
-         print("\nSkipping score calculation example due to non-functional scorer.")
-         # Exit or return if not functional
-         sys.exit("Scorer not functional for example.")
+    # Check if the orchestrator instance is functional before running score calculation
+    if not hasattr(scorer_orchestrator, '_functional') or not scorer_orchestrator._functional:
+         print("\nSkipping score calculation example due to non-functional Resume_Scorer orchestrator.")
+         sys.exit("Resume_Scorer orchestrator not functional for example.")
 
 
     # Define example JD and Resume text
     example_jd_text = """
-    We are looking for a Python Developer. Required skills include Python and Java.
-    Must have 5+ years of experience. Bachelor's degree is required. Knowledge of Docker is a plus.
+    We are looking for a Backend Developer. Required skills include Python and Java.
+    Must have 5 years of experience. Bachelor's degree in Computer Science is required.
+    Knowledge of Docker is a plus. Experience with Flask and SQL databases is beneficial.
+    We use AWS and Git.
     """
 
     example_resume_text = """
+    John Doe
     Summary: Experienced Developer with 6 years of experience.
-    Skills: Python, Flask.
+    Skills: Python, Flask, SQL.
     Education: Bachelor's degree in Computer Science.
-    Experience: Worked on Python and Java projects.
+    Experience: Worked on Python and Java projects for 3 years. Handled database tasks.
+    Projects: Built app using Docker. Used Git for version control.
+    Certifications: AWS Certified.
     """
 
-    print("\n--- Running Example Score Calculation ---")
-    # Calculate scores
-    scores = scorer.calculate_scores(example_jd_text, example_resume_text)
+    print("\n--- Running Example Score Calculation via Orchestrator ---")
+    # Calculate scores using the orchestrator
+    scores = scorer_orchestrator.calculate_scores(example_jd_text, example_resume_text)
 
     # Print results
-    print("\n--- Example Results ---")
-    print(f"TF-IDF Score: {scores['tfidf_score']:.2f}%")
-    print(f"Prioritized Skill Match: {scores['prioritized_skill_score']:.2f}%")
-    print(f"Combined Score: {scores['combined_score']:.2f}%")
+    print("\n--- Example Results from Orchestrator ---")
+    import json
+    # Use .get with default 0.0 or {} for safety when printing
+    print(f"TF-IDF Raw Score: {scores.get('tfidf_score', 0.0):.4f}")
+    print(f"Prioritized Skill Match (Raw): {scores.get('prioritized_skill_score', 0.0):.4f}")
+    print(f"TF-IDF Score (Weighted): {scores.get('weighted_tfidf_score', 0.0):.4f}")
+    print(f"Prioritized Skill Match (Weighted): {scores.get('weighted_prioritized_skill_score', 0.0):.4f}")
+    print(f"Combined Score: {scores.get('combined_score', 0.0):.4f}")
 
     print("\nMatched Items:")
-    if scores['matched_items']:
-        for label, items in scores['matched_items'].items():
+    matched = scores.get('matched_items', {})
+    if matched:
+        for label, items in matched.items():
             print(f"- {label}:")
-            for item_info in items:
-                 # item_info is now a dict with 'text', 'matched_in_sections', 'achieved_weight'
-                 print(f"  - Text: '{item_info['text']}', Matched in Sections: {item_info['matched_in_sections']}, Achieved Weight: {item_info['achieved_weight']:.2f}")
+            if isinstance(items, list):
+                 for item_info in items:
+                      # Use .get for safety in case keys are missing (shouldn't be with current code)
+                      print(f"  - Text: '{item_info.get('text', 'N/A')}', Sections: {item_info.get('matched_in_sections', ['N/A'])}, Weight: {item_info.get('achieved_weight', 0.0):.4f}")
+            else:
+                 print(f"  Warning: Expected list for label '{label}' in matched items, but got {type(items)}.")
+
     else:
         print("No specific JD requirements matched in Resume.")
 
     print("\nMissing Items:")
-    if scores['missing_items']:
-        for label, items in scores['missing_items'].items():
-            print(f"- {label}: {items}")
+    missing = scores.get('missing_items', {})
+    if missing:
+        for label, items in missing.items():
+            # Items in missing_items are just strings
+            if isinstance(items, list):
+                 print(f"- {label}: {items}")
+            else:
+                 print(f"  Warning: Expected list of items for label '{label}' in missing items, but got {type(items)}.")
     else:
         print("All extracted JD items found in Resume.")
-    print("-------------------------")
+
+    # Print any error message returned
+    if "error" in scores:
+         print(f"\nAPI returned an error: {scores['error']}")
+
+    print("-----------------------------------------")
