@@ -7,7 +7,7 @@ import os
 # Import the newly created scoring components
 # Use try-except blocks in case these files are not yet created or named correctly
 try:
-    from TfidfScorer import TfidfScorer
+    from src.tfidf_scorer import TfidfScorer
 except ImportError:
     print("FATAL ERROR: Could not import TfidfScorer in Resume_Scorer. Please check TfidfScorer.py.")
     class TfidfScorer: # Dummy class
@@ -15,7 +15,7 @@ except ImportError:
          def calculate_similarity(self, text1, text2): return 0.0
 
 try:
-    from SkillComparer import SkillComparer
+    from src.skill_comparer import SkillComparer
 except ImportError:
     print("FATAL ERROR: Could not import SkillComparer in Resume_Scorer. Please check SkillComparer.py.")
     class SkillComparer: # Dummy class
@@ -23,7 +23,7 @@ except ImportError:
          def compare_skills(self, job_description, resume_text): return 0.0, 0.0, {}, {}
 
 try:
-    from ScoreAggregator import ScoreAggregator
+    from src.score_aggregator import ScoreAggregator
 except ImportError:
     print("FATAL ERROR: Could not import ScoreAggregator in Resume_Scorer. Please check ScoreAggregator.py.")
     class ScoreAggregator: # Dummy class
@@ -34,7 +34,7 @@ except ImportError:
 # Import original dependencies that Resume_Scorer still needs to pass along or use directly
 # Use try-except blocks
 try:
-    from Text_Processor import Text_Processor
+    from text_processor import TextProcessor
 except ImportError:
     print("FATAL ERROR: Could not import Text_Processor in Resume_Scorer. Please check Text_Processor.py.")
     class Text_Processor: # Dummy class
@@ -43,7 +43,7 @@ except ImportError:
          language = 'unknown'
 
 try:
-    from Skill_Extractor import Skill_Extractor
+    from skill_extractor import SkillExtractor
 except ImportError:
     print("FATAL ERROR: Could not import Skill_Extractor in Resume_Scorer. Please check Skill_Extractor.py.")
     class Skill_Extractor: # Dummy class
@@ -54,7 +54,7 @@ except ImportError:
 
 
 try:
-    from Resume_Parser import Resume_Parser
+    from resume_parser import ResumeParser
 except ImportError:
     print("FATAL ERROR: Could not import Resume_Parser in Resume_Scorer. Please check Resume_Parser.py.")
     class Resume_Parser: # Dummy class
@@ -62,7 +62,7 @@ except ImportError:
          def parse_sections(self, text): return []
 
 
-class Resume_Scorer:
+class ResumeScorer:
     """
     Orchestrates the resume scoring process by utilizing dedicated modules
     for TF-IDF calculation, skill comparison, and score aggregation.
@@ -420,7 +420,7 @@ if __name__ == "__main__":
 
 
     # Instantiate the Resume_Scorer Orchestrator
-    scorer_orchestrator = Resume_Scorer(
+    scorer_orchestrator = ResumeScorer(
         text_processor=example_text_processor, # Pass base dependency
         skill_extractor=example_skill_extractor, # Pass base dependency
         resume_parser=example_resume_parser, # Pass base dependency

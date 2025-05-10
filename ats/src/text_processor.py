@@ -66,7 +66,7 @@ def _perform_nltk_downloads():
             # Flag remains False if download fails
 
 
-class Text_Processor:
+class TextProcessor:
     """
     A class for cleaning and processing text data using NLTK.
     Supports different languages for stopwords.
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     raw_text_mixed = "Hello World! This is a test - with a hyphen. 123."
 
     # Instantiate Text_Processor for English
-    processor_en = Text_Processor(language='english')
+    processor_en = TextProcessor(language='english')
     processed_en = processor_en.process_text(raw_text_en)
     print(f"\nOriginal English Text: {raw_text_en}")
     print(f"Processed English Text: {processed_en}")
@@ -216,7 +216,7 @@ if __name__ == "__main__":
 
 
     # Instantiate Text_Processor for Spanish (requires spanish stopwords)
-    processor_es = Text_Processor(language='spanish')
+    processor_es = TextProcessor(language='spanish')
     processed_es = processor_es.process_text(raw_text_es)
     print(f"\nOriginal Spanish Text: {raw_text_es}")
     print(f"Processed Spanish Text: {processed_es}")

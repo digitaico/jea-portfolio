@@ -8,7 +8,7 @@ import docx
 from pdfminer.high_level import extract_text as extract_text_from_pdf # Alias to avoid name conflict
 
 
-class Document_Reader:
+class DocumentReader:
     """
     A class to read text content from different document types (PDF, DOCX, TXT).
     Currently supports basic text extraction.
@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
 
     # Instantiate the reader
-    reader = Document_Reader()
+    reader = DocumentReader()
 
     # Test reading a .txt file
     txt_stream = io.BytesIO(dummy_txt_content)

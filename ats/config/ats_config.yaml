@@ -1,0 +1,158 @@
+# config/ats_config.yaml
+
+# JEMATS Application Configuration
+
+# General App Configuration
+APP_CONFIG:
+  # The spaCy model to use for linguistic processing
+  SPACY_MODEL_NAME: "en_core_web_md"
+
+# Scoring Weights Configuration
+SCORING_WEIGHTS:
+  # Overall weighting between TF-IDF similarity and Skill Match score
+  TFIDF_WEIGHT: 0.3
+  SKILL_WEIGHT: 0.7
+  # Note: These weights are normalized in ScoreAggregator.
+
+  # Base weights for different types of requirements/skills extracted from the JD.
+  # These weights are multiplied by the section multiplier from the resume.
+  REQUIREMENT_WEIGHTS:
+    REQUIRED_SKILL_PHRASE: 1.5 # Example: Phrases like "required skill", "must have"
+    YEARS_EXPERIENCE: 1.2 # Example: Phrases like "5+ years of experience"
+    QUALIFICATION_DEGREE: 1.0 # Example: Phrases like "Bachelor's degree"
+    KNOWLEDGE_OF: 0.8 # Example: Phrases like "knowledge of AWS"
+    CORE_SKILL: 1.0 # Base weight for individual core skills (e.g., Python, Docker)
+    Unidentified: 0.2 # Default weight for items not matched to specific types (fallback)
+
+  # Multipliers applied to REQUIREMENT_WEIGHTS based on the section of the resume
+  # where a skill/item is found. Higher multiplier = more importance for that section.
+  SECTION_MULTIPLIERS:
+    Experience: 1.5 # Skills found in Experience section have higher weight
+    Skills: 1.0 # Skills found in Skills section have standard weight
+    Technical Skills: 1.0 # Alias/similar to Skills
+    Professional Skills: 1.0 # Alias/similar to Skills
+    Education: 0.8 # Skills/quals found in Education might have slightly lower weight
+    Projects: 1.1 # Skills demonstrated in Projects are valuable
+    Summary: 0.9 # Skills mentioned in Summary are noted, but maybe less detailed
+    Certifications: 1.3 # Certifications are often important
+    Awards: 0.7 # Awards might be less directly skill-related
+    Languages: 0.5 # Language proficiency might be less critical than technical skills
+    Interests: 0.2 # Interests are generally low weight
+    References: 0.1 # References section is irrelevant for skill matching
+    Contact: 0.1 # Contact section is irrelevant
+    Profile: 0.9 # Similar to Summary
+    About: 0.9 # Similar to Summary
+    Portfolio: 1.2 # Portfolio projects are strong indicators
+
+    # Specific headings from your resume identified by Resume_Parser (based on your debug)
+    Independent Projects & Skill Development: 1.1 # Treat specific project section highly
+    AllTheRooms: 1.5 # Example: Specific company/project names could be weighted
+    Sanautos: 1.5 # Example: Specific company/project names could be weighted
+    Renault Toyota Colombia: 1.5 # Example: Specific company/project names could be weighted
+    certification.: 1.3 # Specific match from your resume
+    Languages:: 1.0 # Specific match from your resume (colon variation)
+    Skills:: 1.0 # Specific match from your resume (colon variation)
+    Projects &: 1.1 # Specific match from your resume (ampersand variation)
+
+    # Fallback multiplier for sections not explicitly listed here, or for 'Unidentified' sections
+    Unidentified (Header): 0.5
+    Unidentified (Footer): 0.5
+    Unidentified (Full Document): 0.5
+    Unidentified: 0.5 # Default multiplier for skills in non-parsed areas
+
+# Skill Extraction Configuration
+SKILL_EXTRACTION:
+  # Patterns for spaCy Matcher to find structured requirements in the JD.
+  # Each item in the list is a tuple of [label, list_of_spaCy_pattern_lists].
+  # These labels must match keys in REQUIREMENT_WEIGHTS.
+  REQUIREMENT_PATTERNS:
+    # Example: Patterns for "required skill" or "must have"
+    - [
+        REQUIRED_SKILL_PHRASE,
+        [
+          [{ "LOWER": "required" }, { "LOWER": "skill" }],
+          [{ "LOWER": "must" }, { "LOWER": "have" }],
+        ],
+      ]
+    # Example: Patterns for "X years of experience"
+    - [
+        YEARS_EXPERIENCE,
+        [
+          [
+            { "POS": "NUM", "OP": "+" },
+            { "LOWER": "years" },
+            { "LOWER": "of", "OP": "?" },
+            { "LOWER": "experience" },
+          ],
+        ],
+      ]
+    # Example: Patterns for academic degrees
+    - [
+        QUALIFICATION_DEGREE,
+        [
+          [
+            {
+              "LOWER":
+                { "IN": ["bachelor's", "master's", "bachelor", "master"] },
+            },
+            { "LOWER": "degree", "OP": "?" },
+          ],
+        ],
+      ] # Added bachelor/master without 's and optional degree token
+    # Example: Patterns for "knowledge of X"
+    - [
+        KNOWLEDGE_OF,
+        [
+          [
+            { "LOWER": "knowledge" },
+            { "LOWER": "of" },
+            { "POS": { "IN": ["NOUN", "PROPN", "ADJ"] }, "OP": "+" },
+          ],
+        ],
+      ] # Made pattern more robust for what follows "knowledge of"
+
+  # List of core skill phrases for spaCy PhraseMatcher.
+  # Add your extensive list of IT terms here. Each item is a string.
+  CORE_SKILL_PHRASES:
+    - "Python"
+    - "Flask"
+    - "SQL"
+    - "Docker"
+    - "Git"
+    - "AWS"
+    - "Node.js"
+    - "Express.js" # From your resume/JD
+    - "Machine Learning" # From your resume
+    - "C#" # From your resume
+    - "Computer Science" # From your resume
+    - "Software Engineering" # From your resume
+    - "RESTful APIs" # From your JD
+    - "Agile" # From your JD
+    - "Computer Vision" # From your resume
+    # --- Add your 500+ IT terms below this line ---
+    # Example:
+    - "Java"
+    - "C++"
+    - "JavaScript"
+    - "React"
+    - "Angular"
+    - "Vue.js"
+    - "Spring Boot"
+    - "Django"
+    - "Ruby on Rails"
+    - "Go"
+    - "Kubernetes"
+    - "Terraform" # You mentioned this!
+    - "Ansible"
+    - "Azure"
+    - "Google Cloud Platform" # GCP
+    - "CI/CD"
+    - "Unit Testing"
+    - "Integration Testing"
+    - "Database Design"
+    - "SQLAlchemy" # Example ORM
+    - "Mongoose" # Example ORM
+    # ... continue adding the rest of your IT terms here, one per line, preceded by a hyphen and space.
+    # Example:
+    # - "Your next IT Term"
+    # - "Another IT Term"
