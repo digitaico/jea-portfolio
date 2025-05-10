@@ -1,51 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ATS Score</title>
+    <title>JEMATS - Resume Matching</title>
     <style>
-      body {font-family: sans-serif;}
-      textarea: {width: 80%; height: 200px; margin-bottom: 10px; display: block;}
-      input[type="file"] {margin-bottom: 10px;}
-      #score_result {margin-top: 20px; font-size: 1.2em; font-weight: bold;}
-      div.table {max-width: 100%; border: 1px solid grey; display: table;}
-      div.tr {border: 1px solid grey; display: table-row;}
-      div.td {border: 1px solid grey;display: table-cell;}
-      div.col {display: table-column;}
+        /* Optional: Basic styling for better readability */
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        form div {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        textarea {
+            width: 100%; /* Make textarea responsive */
+            max-width: 800px; /* Limit max width */
+            padding: 8px;
+            border: 1px solid #ccc;
+            box-sizing: border-box; /* Include padding and border in element's total width and height */
+        }
+        input[type="file"], select, button {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 10px 15px;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #4cae4c;
+        }
+        #scoreResult {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+        #scoreResult h3 {
+            margin-top: 15px;
+            margin-bottom: 5px;
+            color: #555;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 3px;
+        }
+        #scoreResult ul {
+            list-style: disc;
+            margin-left: 20px;
+            padding-left: 0;
+        }
+        #scoreResult li {
+             margin-bottom: 5px;
+        }
+
     </style>
-  </head>
-  <body>
-    <h1>JEMATS Resume Scorer</h1>
-    <form id="uploadForm" method="POST" enctype="multipart/form-data">
-      <div>
-        <h2>Language</h2>
-        <select id="languageSelect" name="language">
-          <option value="">... Select language</option>
-          <option value="english">English</option>
-          <option value="spanish">Español</option>
-        </select>
-      </div>
+</head>
+<body>
+    <h1>JEMATS - Resume Matching System</h1>
 
-      <div>
-        <h2>Job Description</h2>
-        <label for="job_description">Copy Job Description and paste here:</label>
-        <textarea id="jobDescription" name="job_description" placeholder="Paste Job Description here" required></textarea>
-      </div>
+    <form id="uploadForm" method="POST">
+        <div>
+            <label for="resume_file">Upload Resume (PDF, DOCX, TXT):</label>
+            <input type="file" id="resume_file" name="resume" accept=".pdf,.docx,.txt" required>
+        </div>
 
-      <div>
-        <h2>Resume</h2>
-        <label for="resumeFile">.txt, .pdf, .docx</label>
-        <input type="file" id="resumeFile" name="resume_file" accept=".txt, .pdf, .docx" required>
-      </div>
+        <div>
+            <label for="job_description">Job Description:</label>
+            <textarea id="job_description" name="job_description" rows="10" cols="80" required></textarea>
+        </div>
 
-      <button id="submitBtn">Pay Jorge and Get Score!</button>
+        <div>
+            <label for="language">Select Language:</label>
+            <select id="language" name="language">
+                <option value="english">English</option>
+                <option value="spanish">Spanish</option>
+                </select>
+        </div>
 
+        <div>
+            <button type="submit">Calculate Score</button>
+        </div>
     </form>
-      
-    <div id="score_result_div"></div>
-    
-    <div>JEMATS v 3.0.0 - 2025</div>
+
+    <div id="scoreResult">
+        <p>Upload a resume and paste a job description to see the matching score.</p>
+    </div>
+
     <script src="script.js"></script>
-  </body>
+</body>
 </html>
