@@ -1,0 +1,7 @@
+test api:
+// desde ~/Desktop
+// desde ~/Desktop
+curl -X POST -F "job_description=test jd" -F "resume_file=cv-jea-2025-04.pdf" -F "language=english" http://localhost:5000/score -v
+
+// source
+https://gemini.google.com/gem/coding-partner/5729066980649242

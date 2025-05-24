@@ -1,0 +1,1039 @@
+# /mnt/disc2/local-code/jea-portfolio/ats/config/nlp_patterns.yaml
+
+languages:
+  en: # English language configuration
+    spacy_model_name: "en_core_web_md"
+    resume_headings:
+      # List of patterns for resume section headings in English
+      # Each item is a list of token patterns, as expected by spacy.Matcher
+      - [
+          { "TEXT": "SUMMARY" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "SUMMARY" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Summary" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "Summary" }]
+      - [
+          { "LOWER": "summary" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "summary" }]
+
+      - [
+          { "TEXT": "CERTIFICATIONS" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "CERTIFICATIONS" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Certifications" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "Certifications" }]
+      - [
+          { "LOWER": "certifications" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "certifications" }]
+
+      - [
+          { "TEXT": "SKILLS" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "SKILLS" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Skills" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "Skills" }]
+      - [
+          { "LOWER": "skills" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "skills" }]
+
+      - [
+          { "TEXT": "EXPERIENCE" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "EXPERIENCE" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Experience" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "Experience" }]
+      - [
+          { "LOWER": "experience" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "experience" }]
+
+      - [
+          { "TEXT": "EDUCATION" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "EDUCATION" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Education" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "Education" }]
+      - [
+          { "LOWER": "education" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "education" }]
+
+      - [
+          { "TEXT": "PROJECTS" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "PROJECTS" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Projects" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "Projects" }]
+      - [
+          { "LOWER": "projects" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "projects" }]
+
+      - [
+          { "TEXT": "AWARDS" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "AWARDS" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Awards" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "Awards" }]
+      - [
+          { "LOWER": "awards" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "awards" }]
+
+      - [
+          { "TEXT": "LANGUAGES" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "LANGUAGES" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Languages" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "Languages" }]
+      - [
+          { "LOWER": "languages" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "languages" }]
+
+      - [
+          { "TEXT": "INTERESTS" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "INTERESTS" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Interests" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "Interests" }]
+      - [
+          { "LOWER": "interests" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "interests" }]
+
+      - [
+          { "TEXT": "REFERENCES" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "REFERENCES" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "References" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "References" }]
+      - [
+          { "LOWER": "references" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "references" }]
+
+      - [
+          { "TEXT": "CONTACT" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "CONTACT" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Contact" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "Contact" }]
+      - [
+          { "LOWER": "contact" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "contact" }]
+
+      - [
+          { "TEXT": "PROFILE" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "PROFILE" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Profile" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "Profile" }]
+      - [
+          { "LOWER": "profile" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "profile" }]
+
+      - [
+          { "TEXT": "ABOUT" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "ABOUT" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "About" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "About" }]
+      - [
+          { "LOWER": "about" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "about" }]
+
+      - [
+          { "TEXT": "PORTFOLIO" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "PORTFOLIO" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Portfolio" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "Portfolio" }]
+      - [
+          { "LOWER": "portfolio" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "portfolio" }]
+
+      # Multi-word headings
+      - [
+          { "TEXT": "WORK" },
+          { "TEXT": "EXPERIENCE" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "WORK" }, { "TEXT": "EXPERIENCE" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Work" },
+          { "IS_TITLE": True, "TEXT": "Experience" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [
+          { "IS_TITLE": True, "TEXT": "Work" },
+          { "IS_TITLE": True, "TEXT": "Experience" },
+        ]
+      - [
+          { "LOWER": "work" },
+          { "LOWER": "experience" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "work" }, { "LOWER": "experience" }]
+
+      - [
+          { "TEXT": "TECHNICAL" },
+          { "TEXT": "SKILLS" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "TECHNICAL" }, { "TEXT": "SKILLS" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Technical" },
+          { "IS_TITLE": True, "TEXT": "Skills" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [
+          { "IS_TITLE": True, "TEXT": "Technical" },
+          { "IS_TITLE": True, "TEXT": "Skills" },
+        ]
+      - [
+          { "LOWER": "technical" },
+          { "LOWER": "skills" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "technical" }, { "LOWER": "skills" }]
+
+      - [
+          { "TEXT": "PROFESSIONAL" },
+          { "TEXT": "SKILLS" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "PROFESSIONAL" }, { "TEXT": "SKILLS" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Professional" },
+          { "IS_TITLE": True, "TEXT": "Skills" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [
+          { "IS_TITLE": True, "TEXT": "Professional" },
+          { "IS_TITLE": True, "TEXT": "Skills" },
+        ]
+      - [
+          { "LOWER": "professional" },
+          { "LOWER": "skills" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "professional" }, { "LOWER": "skills" }]
+
+      - [
+          { "TEXT": "EMPLOYMENT" },
+          { "TEXT": "HISTORY" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "EMPLOYMENT" }, { "TEXT": "HISTORY" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Employment" },
+          { "IS_TITLE": True, "TEXT": "History" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [
+          { "IS_TITLE": True, "TEXT": "Employment" },
+          { "IS_TITLE": True, "TEXT": "History" },
+        ]
+      - [
+          { "LOWER": "employment" },
+          { "LOWER": "history" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "employment" }, { "LOWER": "history" }]
+
+      - [
+          { "TEXT": "VOLUNTEER" },
+          { "TEXT": "EXPERIENCE" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "VOLUNTEER" }, { "TEXT": "EXPERIENCE" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Volunteer" },
+          { "IS_TITLE": True, "TEXT": "Experience" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [
+          { "IS_TITLE": True, "TEXT": "Volunteer" },
+          { "IS_TITLE": True, "TEXT": "Experience" },
+        ]
+      - [
+          { "LOWER": "volunteer" },
+          { "LOWER": "experience" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "volunteer" }, { "LOWER": "experience" }]
+
+      - [
+          { "TEXT": "MORE" },
+          { "TEXT": "OF" },
+          { "TEXT": "ME" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "MORE" }, { "TEXT": "OF" }, { "TEXT": "ME" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "More" },
+          { "IS_TITLE": True, "TEXT": "Of" },
+          { "IS_TITLE": True, "TEXT": "Me" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [
+          { "IS_TITLE": True, "TEXT": "More" },
+          { "IS_TITLE": True, "TEXT": "Of" },
+          { "IS_TITLE": True, "TEXT": "Me" },
+        ]
+      - [
+          { "LOWER": "more" },
+          { "LOWER": "of" },
+          { "LOWER": "me" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "more" }, { "LOWER": "of" }, { "LOWER": "me" }]
+
+      # Specific headings from your resume that act like subheadings under Experience
+      - [
+          { "TEXT": "Independent" },
+          { "IS_SPACE": True },
+          { "TEXT": "Projects" },
+          { "IS_SPACE": True },
+          { "TEXT": "&" },
+          { "IS_SPACE": True },
+          { "TEXT": "Skill" },
+          { "IS_SPACE": True },
+          { "TEXT": "Development" },
+        ]
+      - [{ "TEXT": "AllTheRooms" }]
+      - [{ "TEXT": "Sanautos" }]
+      - [
+          { "TEXT": "Renault" },
+          { "IS_SPACE": True },
+          { "TEXT": "Toyota" },
+          { "IS_SPACE": True },
+          { "TEXT": "Colombia" },
+        ]
+
+      # Ensure Certifications and Licenses patterns are robust for singular/plural and cases
+      - [
+          {
+            "LOWER":
+              {
+                "IN":
+                  ["certification", "certifications", "license", "licenses"],
+              },
+          },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [
+          {
+            "LOWER":
+              {
+                "IN":
+                  ["certification", "certifications", "license", "licenses"],
+              },
+          },
+        ]
+
+    skill_patterns: # These map to the types of patterns SkillExtractor uses
+      required_skill_phrases:
+        - label: "REQUIRED_SKILL_PHRASE"
+          patterns:
+            # Example generic tech skills
+            - [{ "LOWER": "python" }]
+            - [{ "LOWER": "java" }]
+            - [{ "LOWER": "javascript" }]
+            - [{ "LOWER": "c#" }]
+            - [{ "LOWER": "c++" }]
+            - [{ "LOWER": "sql" }]
+            - [{ "LOWER": "nosql" }]
+            - [{ "LOWER": "docker" }]
+            - [{ "LOWER": "kubernetes" }]
+            - [{ "LOWER": "aws" }]
+            - [{ "LOWER": "azure" }]
+            - [{ "LOWER": "gcp" }]
+            - [{ "LOWER": "git" }]
+            - [{ "LOWER": "agile" }]
+            - [{ "LOWER": "scrum" }]
+            - [{ "LOWER": "restful" }, { "LOWER": "apis" }]
+            - [{ "LOWER": "rest" }, { "LOWER": "api" }]
+            - [{ "LOWER": "microservices" }]
+            - [{ "LOWER": "machine" }, { "LOWER": "learning" }]
+            - [{ "LOWER": "deep" }, { "LOWER": "learning" }]
+            - [{ "LOWER": "data" }, { "LOWER": "science" }]
+            - [{ "LOWER": "big" }, { "LOWER": "data" }]
+            - [{ "LOWER": "cloud" }, { "LOWER": "computing" }]
+            - [{ "LOWER": "unit" }, { "LOWER": "testing" }]
+            - [{ "LOWER": "integration" }, { "LOWER": "testing" }]
+            - [
+                { "LOWER": "test" },
+                { "LOWER": "driven" },
+                { "LOWER": "development" },
+              ]
+            - [{ "LOWER": "tdd" }]
+            - [{ "LOWER": "continuous" }, { "LOWER": "integration" }]
+            - [{ "LOWER": "ci" }, { "LOWER": "cd" }]
+            - [{ "LOWER": "devops" }]
+            - [{ "LOWER": "frontend" }]
+            - [{ "LOWER": "backend" }]
+            - [{ "LOWER": "fullstack" }]
+            - [{ "LOWER": "api" }, { "LOWER": "design" }]
+            - [
+                { "LOWER": "object" },
+                { "LOWER": "oriented" },
+                { "LOWER": "programming" },
+              ]
+            - [{ "LOWER": "oop" }]
+            - [{ "LOWER": "data" }, { "LOWER": "structures" }]
+            - [{ "LOWER": "algorithms" }]
+            - [{ "LOWER": "system" }, { "LOWER": "design" }]
+            - [{ "LOWER": "web" }, { "LOWER": "development" }]
+            - [{ "LOWER": "mobile" }, { "LOWER": "development" }]
+            - [{ "LOWER": "database" }, { "LOWER": "management" }]
+            - [{ "LOWER": "network" }, { "LOWER": "security" }]
+            - [{ "LOWER": "cybersecurity" }]
+            - [{ "LOWER": "blockchain" }]
+            - [{ "LOWER": "artificial" }, { "LOWER": "intelligence" }]
+            - [{ "LOWER": "ai" }]
+            - [{ "LOWER": "robotics" }]
+            - [
+                { "LOWER": "natural" },
+                { "LOWER": "language" },
+                { "LOWER": "processing" },
+              ]
+            - [{ "LOWER": "nlp" }]
+            - [{ "LOWER": "computer" }, { "LOWER": "vision" }]
+            - [{ "LOWER": "cv" }]
+            - [{ "LOWER": "user" }, { "LOWER": "experience" }]
+            - [{ "LOWER": "ux" }]
+            - [{ "LOWER": "user" }, { "LOWER": "interface" }]
+            - [{ "LOWER": "ui" }]
+            - [{ "LOWER": "design" }, { "LOWER": "patterns" }]
+            - [{ "LOWER": "software" }, { "LOWER": "engineering" }]
+            - [{ "LOWER": "computer" }, { "LOWER": "science" }]
+
+      years_experience:
+        - label: "YEARS_EXPERIENCE"
+          patterns:
+            - [{ "TEXT": { "REGEX": "[0-9]+(\\+)?-? ?years" } }]
+            - [{ "TEXT": { "REGEX": "[0-9]+(\\+)?-? ?yr" } }]
+            - [{ "TEXT": { "REGEX": "[0-9]+(\\+)?-? ?yrs" } }]
+            - [{ "TEXT": { "REGEX": "[0-9]+(\\+)?-? ?year of experience" } }]
+            - [{ "TEXT": { "REGEX": "[0-9]+(\\+)?-? ?years of experience" } }]
+            # More specific patterns from your debug output, e.g.:
+            - [
+                { "TEXT": { "REGEX": "[0-9]+(\\+)? years of experience in" } },
+                { "LOWER": "nodejs" },
+                { "LOWER": "development" },
+              ]
+            - [
+                { "TEXT": { "REGEX": "[0-9]+(\\+)? years of experience in" } },
+                { "LOWER": "nodejs" },
+              ]
+            - [
+                { "TEXT": { "REGEX": "\\+ years of experience in" } },
+                { "LOWER": "nodejs" },
+                { "LOWER": "development" },
+              ]
+            - [
+                { "TEXT": { "REGEX": "\\+ years of experience in" } },
+                { "LOWER": "nodejs" },
+              ]
+
+      knowledge_of:
+        - label: "KNOWLEDGE_OF"
+          patterns:
+            - [{ "LOWER": "knowledge" }, { "LOWER": "of" }, { "LOWER": "orms" }]
+            - [
+                { "LOWER": "familiarity" },
+                { "LOWER": "with" },
+                { "LOWER": "agile" },
+              ]
+            # ... add other knowledge-related patterns
+
+      qualification_degree:
+        - label: "QUALIFICATION_DEGREE"
+          patterns:
+            - [{ "LOWER": "bachelor's" }, { "LOWER": "degree" }]
+            - [{ "LOWER": "master's" }, { "LOWER": "degree" }]
+            - [{ "LOWER": "ph.d" }]
+            - [
+                { "LOWER": "computer" },
+                { "LOWER": "science" },
+                { "LOWER": "degree" },
+              ]
+            # ... add other qualification/degree patterns
+
+  es: # Spanish language configuration
+    spacy_model: "es_core_news_md"
+    resume_headings:
+      - [
+          { "TEXT": "RESUMEN" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "RESUMEN" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Resumen" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "Resumen" }]
+      - [
+          { "LOWER": "resumen" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "resumen" }]
+
+      - [
+          { "TEXT": "HABILIDADES" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "HABILIDADES" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Habilidades" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "Habilidades" }]
+      - [
+          { "LOWER": "habilidades" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "habilidades" }]
+      # ... (Add all other Spanish equivalents for resume headings from app.py) ...
+
+    skill_patterns:
+      required_skill_phrases:
+        - label: "REQUIRED_SKILL_PHRASE"
+          patterns:
+            - [{ "LOWER": "pitón" }] # Spanish for Python (though often just 'Python' is used)
+            - [{ "LOWER": "java" }]
+            - [{ "LOWER": "javascript" }]
+            - [{ "LOWER": "docker" }]
+            - [{ "LOWER": "kubernetes" }]
+            - [{ "LOWER": "aws" }]
+            - [{ "LOWER": "azure" }]
+            - [{ "LOWER": "gcp" }]
+            - [{ "LOWER": "git" }]
+            - [{ "LOWER": "ágil" }] # Spanish for Agile
+            - [{ "LOWER": "scrum" }]
+            - [{ "LOWER": "apis" }, { "LOWER": "restful" }]
+            - [{ "LOWER": "api" }, { "LOWER": "rest" }]
+            - [{ "LOWER": "microservicios" }]
+            - [{ "LOWER": "aprendizaje" }, { "LOWER": "automático" }] # Spanish for Machine Learning
+            - [{ "LOWER": "aprendizaje" }, { "LOWER": "profundo" }] # Spanish for Deep Learning
+            - [{ "LOWER": "ciencia" }, { "LOWER": "de" }, { "LOWER": "datos" }] # Spanish for Data Science
+            - [{ "LOWER": "big" }, { "LOWER": "data" }] # Often used as is
+            - [
+                { "LOWER": "computación" },
+                { "LOWER": "en" },
+                { "LOWER": "la" },
+                { "LOWER": "nube" },
+              ] # Spanish for Cloud Computing
+            - [{ "LOWER": "pruebas" }, { "LOWER": "unitarias" }] # Spanish for Unit Testing
+            - [
+                { "LOWER": "pruebas" },
+                { "LOWER": "de" },
+                { "LOWER": "integración" },
+              ] # Spanish for Integration Testing
+            - [
+                { "LOWER": "desarrollo" },
+                { "LOWER": "guiado" },
+                { "LOWER": "por" },
+                { "LOWER": "pruebas" },
+              ] # Spanish for TDD
+            - [{ "LOWER": "integración" }, { "LOWER": "continua" }] # Spanish for Continuous Integration
+            - [{ "LOWER": "ci" }, { "LOWER": "cd" }] # Often used as is
+            - [{ "LOWER": "devops" }] # Often used as is
+            - [{ "LOWER": "frontend" }] # Often used as is
+            - [{ "LOWER": "backend" }] # Often used as is
+            - [{ "LOWER": "fullstack" }] # Often used as is
+            - [{ "LOWER": "diseño" }, { "LOWER": "de" }, { "LOWER": "api" }] # Spanish for API Design
+            - [
+                { "LOWER": "programación" },
+                { "LOWER": "orientada" },
+                { "LOWER": "a" },
+                { "LOWER": "objetos" },
+              ] # Spanish for OOP
+            - [{ "LOWER": "poo" }] # Spanish for OOP
+            - [
+                { "LOWER": "estructuras" },
+                { "LOWER": "de" },
+                { "LOWER": "datos" },
+              ] # Spanish for Data Structures
+            - [{ "LOWER": "algoritmos" }] # Spanish for Algorithms
+            - [
+                { "LOWER": "diseño" },
+                { "LOWER": "de" },
+                { "LOWER": "sistemas" },
+              ] # Spanish for System Design
+            - [{ "LOWER": "desarrollo" }, { "LOWER": "web" }] # Spanish for Web Development
+            - [{ "LOWER": "desarrollo" }, { "LOWER": "móvil" }] # Spanish for Mobile Development
+            - [
+                { "LOWER": "gestión" },
+                { "LOWER": "de" },
+                { "LOWER": "bases" },
+                { "LOWER": "de" },
+                { "LOWER": "datos" },
+              ] # Spanish for Database Management
+            - [{ "LOWER": "seguridad" }, { "LOWER": "de" }, { "LOWER": "red" }] # Spanish for Network Security
+            - [{ "LOWER": "ciberseguridad" }] # Spanish for Cybersecurity
+            - [{ "LOWER": "blockchain" }] # Often used as is
+            - [{ "LOWER": "inteligencia" }, { "LOWER": "artificial" }] # Spanish for Artificial Intelligence
+            - [{ "LOWER": "ia" }] # Spanish for AI
+            - [{ "LOWER": "robótica" }] # Spanish for Robotics
+            - [
+                { "LOWER": "procesamiento" },
+                { "LOWER": "del" },
+                { "LOWER": "lenguaje" },
+                { "LOWER": "natural" },
+              ] # Spanish for NLP
+            - [{ "LOWER": "pln" }] # Spanish for NLP
+            - [{ "LOWER": "visión" }, { "LOWER": "artificial" }] # Spanish for Computer Vision
+            - [{ "LOWER": "va" }] # Spanish for CV (Computer Vision)
+            - [
+                { "LOWER": "experiencia" },
+                { "LOWER": "de" },
+                { "LOWER": "usuario" },
+              ] # Spanish for User Experience
+            - [{ "LOWER": "ux" }] # Often used as is
+            - [
+                { "LOWER": "interfaz" },
+                { "LOWER": "de" },
+                { "LOWER": "usuario" },
+              ] # Spanish for User Interface
+            - [{ "LOWER": "ui" }] # Often used as is
+            - [
+                { "LOWER": "patrones" },
+                { "LOWER": "de" },
+                { "LOWER": "diseño" },
+              ] # Spanish for Design Patterns
+            - [
+                { "LOWER": "ingeniería" },
+                { "LOWER": "de" },
+                { "LOWER": "software" },
+              ] # Spanish for Software Engineering
+            - [
+                { "LOWER": "ciencias" },
+                { "LOWER": "de" },
+                { "LOWER": "la" },
+                { "LOWER": "computación" },
+              ] # Spanish for Computer Science
+
+      years_experience:
+        - label: "YEARS_EXPERIENCE"
+          patterns:
+            - [
+                { "LOWER": "años" },
+                { "LOWER": "de" },
+                { "LOWER": "experiencia" },
+              ]
+            - [
+                { "LOWER": "años" },
+                { "LOWER": "de" },
+                { "LOWER": "experiencia" },
+                { "LOWER": "en" },
+                { "LOWER": "desarrollo" },
+                { "LOWER": "nodejs" },
+              ]
+            # ... add other Spanish experience patterns
+      knowledge_of:
+        - label: "KNOWLEDGE_OF"
+          patterns:
+            - [
+                { "LOWER": "conocimiento" },
+                { "LOWER": "de" },
+                { "LOWER": "orms" },
+              ]
+            - [
+                { "LOWER": "familiaridad" },
+                { "LOWER": "con" },
+                { "LOWER": "agile" },
+              ]
+            # ... add other Spanish knowledge-related patterns
+      qualification_degree:
+        - label: "QUALIFICATION_DEGREE"
+          patterns:
+            - [{ "LOWER": "título" }, { "LOWER": "de" }, { "LOWER": "grado" }]
+            - [{ "LOWER": "maestría" }]
+            - [{ "LOWER": "doctorado" }]
+            - [
+                { "LOWER": "grado" },
+                { "LOWER": "en" },
+                { "LOWER": "ciencias" },
+                { "LOWER": "de" },
+                { "LOWER": "la" },
+                { "LOWER": "computación" },
+              ]
+            # ... add other Spanish qualification/degree patterns
+
+  pt: # Portuguese language configuration
+    spacy_model: "pt_core_news_md"
+    resume_headings:
+      - [
+          { "TEXT": "RESUMO" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "RESUMO" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Resumo" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "Resumo" }]
+      - [
+          { "LOWER": "resumo" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "resumo" }]
+
+      - [
+          { "TEXT": "HABILIDADES" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "TEXT": "HABILIDADES" }]
+      - [
+          { "IS_TITLE": True, "TEXT": "Habilidades" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "IS_TITLE": True, "TEXT": "Habilidades" }]
+      - [
+          { "LOWER": "habilidades" },
+          { "IS_PUNCT": True, "OP": "?" },
+          { "IS_SPACE": True, "OP": "*" },
+          { "TEXT": "\n", "OP": "?" },
+        ]
+      - [{ "LOWER": "habilidades" }]
+      # ... (Add all other Portuguese equivalents for resume headings from app.py) ...
+
+    skill_patterns:
+      required_skill_phrases:
+        - label: "REQUIRED_SKILL_PHRASE"
+          patterns:
+            - [{ "LOWER": "python" }] # Python is often the same
+            - [{ "LOWER": "java" }]
+            - [{ "LOWER": "javascript" }]
+            - [{ "LOWER": "docker" }]
+            - [{ "LOWER": "kubernetes" }]
+            - [{ "LOWER": "aws" }]
+            - [{ "LOWER": "azure" }]
+            - [{ "LOWER": "gcp" }]
+            - [{ "LOWER": "git" }]
+            - [{ "LOWER": "ágil" }] # Portuguese for Agile
+            - [{ "LOWER": "scrum" }]
+            - [{ "LOWER": "apis" }, { "LOWER": "restful" }]
+            - [{ "LOWER": "api" }, { "LOWER": "rest" }]
+            - [{ "LOWER": "microsserviços" }] # Portuguese for Microservices
+            - [
+                { "LOWER": "aprendizagem" },
+                { "LOWER": "de" },
+                { "LOWER": "máquina" },
+              ] # Portuguese for Machine Learning
+            - [{ "LOWER": "aprendizagem" }, { "LOWER": "profunda" }] # Portuguese for Deep Learning
+            - [{ "LOWER": "ciência" }, { "LOWER": "de" }, { "LOWER": "dados" }] # Portuguese for Data Science
+            - [{ "LOWER": "big" }, { "LOWER": "data" }] # Often used as is
+            - [
+                { "LOWER": "computação" },
+                { "LOWER": "em" },
+                { "LOWER": "nuvem" },
+              ] # Portuguese for Cloud Computing
+            - [{ "LOWER": "teste" }, { "LOWER": "unitário" }] # Portuguese for Unit Testing
+            - [
+                { "LOWER": "teste" },
+                { "LOWER": "de" },
+                { "LOWER": "integração" },
+              ] # Portuguese for Integration Testing
+            - [
+                { "LOWER": "desenvolvimento" },
+                { "LOWER": "orientado" },
+                { "LOWER": "a" },
+                { "LOWER": "testes" },
+              ] # Portuguese for TDD
+            - [{ "LOWER": "integração" }, { "LOWER": "contínua" }] # Portuguese for Continuous Integration
+            - [{ "LOWER": "ci" }, { "LOWER": "cd" }] # Often used as is
+            - [{ "LOWER": "devops" }] # Often used as is
+            - [{ "LOWER": "frontend" }] # Often used as is
+            - [{ "LOWER": "backend" }] # Often used as is
+            - [{ "LOWER": "fullstack" }] # Often used as is
+            - [{ "LOWER": "design" }, { "LOWER": "de" }, { "LOWER": "api" }] # Portuguese for API Design
+            - [
+                { "LOWER": "programação" },
+                { "LOWER": "orientada" },
+                { "LOWER": "a" },
+                { "LOWER": "objetos" },
+              ] # Portuguese for OOP
+            - [{ "LOWER": "poo" }] # Portuguese for OOP
+            - [
+                { "LOWER": "estruturas" },
+                { "LOWER": "de" },
+                { "LOWER": "dados" },
+              ] # Portuguese for Data Structures
+            - [{ "LOWER": "algoritmos" }] # Portuguese for Algorithms
+            - [
+                { "LOWER": "design" },
+                { "LOWER": "de" },
+                { "LOWER": "sistemas" },
+              ] # Portuguese for System Design
+            - [{ "LOWER": "desenvolvimento" }, { "LOWER": "web" }] # Portuguese for Web Development
+            - [{ "LOWER": "desenvolvimento" }, { "LOWER": "móvel" }] # Portuguese for Mobile Development
+            - [
+                { "LOWER": "gerenciamento" },
+                { "LOWER": "de" },
+                { "LOWER": "banco" },
+                { "LOWER": "de" },
+                { "LOWER": "dados" },
+              ] # Portuguese for Database Management
+            - [{ "LOWER": "segurança" }, { "LOWER": "de" }, { "LOWER": "rede" }] # Portuguese for Network Security
+            - [{ "LOWER": "cibersegurança" }] # Portuguese for Cybersecurity
+            - [{ "LOWER": "blockchain" }] # Often used as is
+            - [{ "LOWER": "inteligência" }, { "LOWER": "artificial" }] # Portuguese for Artificial Intelligence
+            - [{ "LOWER": "ia" }] # Portuguese for AI
+            - [{ "LOWER": "robótica" }] # Portuguese for Robotics
+            - [
+                { "LOWER": "processamento" },
+                { "LOWER": "de" },
+                { "LOWER": "linguagem" },
+                { "LOWER": "natural" },
+              ] # Portuguese for NLP
+            - [{ "LOWER": "pln" }] # Portuguese for NLP
+            - [{ "LOWER": "visão" }, { "LOWER": "computacional" }] # Portuguese for Computer Vision
+            - [{ "LOWER": "vc" }] # Portuguese for CV (Computer Vision)
+            - [
+                { "LOWER": "experiência" },
+                { "LOWER": "do" },
+                { "LOWER": "usuário" },
+              ] # Portuguese for User Experience
+            - [{ "LOWER": "ux" }] # Often used as is
+            - [
+                { "LOWER": "interface" },
+                { "LOWER": "do" },
+                { "LOWER": "usuário" },
+              ] # Portuguese for User Interface
+            - [{ "LOWER": "ui" }] # Often used as is
+            - [{ "LOWER": "padrões" }, { "LOWER": "de" }, { "LOWER": "design" }] # Portuguese for Design Patterns
+            - [
+                { "LOWER": "engenharia" },
+                { "LOWER": "de" },
+                { "LOWER": "software" },
+              ] # Portuguese for Software Engineering
+            - [
+                { "LOWER": "ciência" },
+                { "LOWER": "da" },
+                { "LOWER": "computação" },
+              ] # Portuguese for Computer Science
