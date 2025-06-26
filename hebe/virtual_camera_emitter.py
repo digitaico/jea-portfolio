@@ -1,6 +1,8 @@
 # virtual_camera_emitter.py
 import pyvirtualcam
-import numpy as np # Used for type hinting 'frame: np.ndarray'
+import numpy as np
+import subprocess # For running shell commands like v4l2-ctl
+import re         # For regular expressions to parse command output
 
 class VirtualCameraEmitter:
     def __init__(self, width: int, height: int, fps: float, device_path: str = None):
@@ -21,10 +23,60 @@ class VirtualCameraEmitter:
         self.device_path = device_path
         self.cam = None
 
+    def _check_v4l2loopback_device_status(self) -> bool:
+        """
+        Checks if the specified virtual camera device exists and is likely from v4l2loopback.
+        Provides user guidance if issues are found.
+        """
+        if not self.device_path:
+            print("VirtualCameraEmitter: Warning: No specific virtual device path provided. Cannot perform pre-check.")
+            return True # Allow pyvirtualcam to attempt opening a default device
+
+        print(f"VirtualCameraEmitter: Checking status of virtual device {self.device_path}...")
+        try:
+            # Use v4l2-ctl to list devices and check if our device path is there
+            result = subprocess.run(['v4l2-ctl', '--list-devices'], capture_output=True, text=True, check=True)
+            output = result.stdout
+
+            # Find the section in the output that corresponds to our device_path
+            # We look for the path and then for "v4l2loopback" in its associated description
+            # This regex is more robust to whitespace and captures the device name.
+            device_section_pattern = r"(?P<device_name>[^\n]+?)\s+\(.+?platform:v4l2loopback.+?\)\s*(\n\s*" + re.escape(self.device_path) + r")"
+            match = re.search(device_section_pattern, output)
+
+            if match:
+                device_name = match.group('device_name').strip()
+                print(f"VirtualCameraEmitter: Confirmed '{device_name}' ({self.device_path}) is a v4l2loopback device.")
+                return True
+            else:
+                print(f"VirtualCameraEmitter: Error: Virtual device {self.device_path} not found or not recognized as a v4l2loopback device by 'v4l2-ctl'.")
+                return False
+
+        except FileNotFoundError:
+            print("VirtualCameraEmitter: Error: 'v4l2-ctl' command not found. Please install v4l-utils (e.g., `sudo apt install v4l-utils`).")
+            return False
+        except subprocess.CalledProcessError as e:
+            print(f"VirtualCameraEmitter: Error running 'v4l2-ctl': {e.stderr}")
+            return False
+        except Exception as e:
+            print(f"VirtualCameraEmitter: An unexpected error occurred during device pre-check: {e}")
+            return False
+
     def __enter__(self):
         """
         Context manager entry point. Initializes the pyvirtualcam.Camera.
         """
+        if not self._check_v4l2loopback_device_status():
+            raise IOError(
+                f"\n--- Virtual Camera Setup Required ---\n"
+                f"Virtual device '{self.device_path}' is not properly set up for this application.\n"
+                f"Please ensure `v4l2loopback` is loaded correctly.\n"
+                f"Run in your terminal (and provide password if prompted):\n"
+                f"  `sudo modprobe v4l2loopback devices=1 exclusive_caps=1 card_label=\"MySmoothedCam\"`\n"
+                f"After running this, verify the device path using `v4l2-ctl --list-devices`.\n"
+                f"Then, re-run this application with the correct `--virtual-camera-path`.\n"
+                f"-------------------------------------\n"
+            )
         try:
             # `device` parameter explicitly specifies the virtual device path
             # `fmt=pyvirtualcam.PixelFormat.BGR` is critical as our frames from OpenCV are BGR
@@ -33,14 +85,14 @@ class VirtualCameraEmitter:
             print(f"VirtualCameraEmitter: Virtual camera started on {self.cam.device} at {self.width}x{self.height} @ {self.fps:.2f} FPS.")
             return self
         except Exception as e:
-            # Provide more specific guidance on common errors
+            # Provide more specific guidance on common errors if pyvirtualcam fails despite pre-check
             error_msg = f"Error: Could not initialize virtual camera on {self.device_path or 'default device'}. "
             if "No such file or directory" in str(e) or "V4L2_ERROR: Failed to open V4L2 device" in str(e):
-                error_msg += "This usually means the specified device path does not exist or `v4l2loopback` is not loaded/configured correctly."
-                error_msg += "\n  Ensure you've run: `sudo modprobe v4l2loopback devices=1 exclusive_caps=1 card_label=\"MySmoothedCam\"`"
-                error_msg += "\n  And checked `ls /dev/video*` to confirm the device path (e.g., /dev/video1)."
+                error_msg += "This usually means the device path is incorrect or it's not ready. "
             elif "Permission denied" in str(e):
-                error_msg += "Permission denied. Ensure your user is in the 'video' group (sudo usermod -a -G video $USER) and logged back in."
+                error_msg += "Permission denied. Ensure your user is in the 'video' group (`sudo usermod -a -G video $USER`) and logged back in."
+            elif "Failed to open V4L2 device" in str(e):
+                error_msg += "This might indicate a capabilities mismatch (e.g., `exclusive_caps=1` missing) or the device being in use by another app."
             raise IOError(f"{error_msg}\n  Original error: {e}")
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -48,7 +100,7 @@ class VirtualCameraEmitter:
         Context manager exit point. Automatically releases the virtual camera.
         """
         if self.cam:
-            self.cam.close() # pyvirtualcam.Camera uses .close() for cleanup
+            self.cam.close() # pyvirtualcam.Camera uses .close()
             print(f"VirtualCameraEmitter: Virtual camera on {self.cam.device} released.")
 
     def send_frame(self, frame: np.ndarray):
@@ -59,8 +111,6 @@ class VirtualCameraEmitter:
             frame (np.ndarray): The BGR frame to send.
         """
         if self.cam:
-            # pyvirtualcam was initialized with fmt=BGR, so it expects BGR frames
-            # and handles any internal conversions needed for the virtual device.
             self.cam.send(frame)
             self.cam.sleep_until_next_frame()
         else:
@@ -68,55 +118,45 @@ class VirtualCameraEmitter:
 
 # Example of how to use it (for testing purposes)
 if __name__ == "__main__":
-    # This example requires:
-    # 1. A physical webcam at index 0 (adjust `physical_camera_index` if different).
-    # 2. `v4l2loopback` loaded to create a virtual device (e.g., at /dev/video1).
-    #    Run in your terminal: `sudo modprobe v4l2loopback devices=1 exclusive_caps=1 card_label="MySmoothedCam"`
-    #    And verify path: `ls /dev/video*`
-    # It will simply pass through the physical webcam feed to the virtual cam.
-
-    import cv2
-    from camera_handler import CameraHandler # Assuming CameraHandler is in camera_handler.py
-
-    physical_camera_index = 0
-    virtual_camera_path = '/dev/video1' # <--- ADJUST THIS IF YOUR VIRTUAL CAM IS A DIFFERENT INDEX
-
+    # This block is for testing this module independently.
+    # It attempts to open a camera and stream to a virtual one.
     print("--- Virtual Camera Emitter Test ---")
-    print(f"Attempting to open physical camera at index: {physical_camera_index}")
-    print(f"Attempting to stream to virtual camera at path: {virtual_camera_path}")
-    print("---------------------------------")
+    print("Opening physical webcam and streaming to a virtual device.")
+    print("You might need to run `sudo modprobe v4l2loopback devices=1 exclusive_caps=1 card_label=\"MySmoothedCam\"` first.")
+    
+    # Use your physical camera index, e.g., 0 or 1
+    # Use your virtual camera path, e.g., '/dev/video0'
+    PHYSICAL_CAM_INDEX = 0
+    VIRTUAL_CAM_TEST_PATH = '/dev/video1' # Default for many systems
+
+    cap = cv2.VideoCapture(PHYSICAL_CAM_INDEX)
+    if not cap.isOpened():
+        print(f"Error: Could not open physical webcam at index {PHYSICAL_CAM_INDEX}. Exiting test.")
+        exit()
+
+    # Get properties from physical camera
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    if fps == 0: fps = 30 # Default to 30 if not reported
 
     try:
-        with CameraHandler(camera_index=physical_camera_index) as cam_input:
-            with VirtualCameraEmitter(width=cam_input.width, height=cam_input.height,
-                                      fps=cam_input.fps, device_path=virtual_camera_path) as cam_output:
-                print("\nStreaming physical camera to virtual camera. Check your video conferencing app (e.g., Cheese, Google Meet) and select 'MySmoothedCam' or similar.")
-                print("Press 'q' in console to quit.")
-                
-                while True:
-                    ret, frame = cam_input.read_frame()
-                    if not ret:
-                        print("Failed to read frame from physical camera, exiting.")
-                        break
-
-                    # Resize frame if dimensions don't match exactly (though they should based on init)
-                    # This step is mostly a safeguard, as width/height are derived from input cam.
-                    if frame.shape[1] != cam_output.width or frame.shape[0] != cam_output.height:
-                        frame = cv2.resize(frame, (cam_output.width, cam_output.height))
-
-                    cam_output.send_frame(frame)
-
-                    # For console quit check (requires an active window for cv2.waitKey to work well)
-                    # If you just want to quit from console input, you might need a different mechanism
-                    # if no cv2.imshow window is active.
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        print("Quit requested, exiting loop.")
-                        break
-
+        with VirtualCameraEmitter(width=width, height=height, fps=fps, device_path=VIRTUAL_CAM_TEST_PATH) as emitter:
+            print("Streaming to virtual camera. Check Cheese or Google Meet.")
+            print("Press 'q' in this terminal to quit.")
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    print("Failed to grab frame from physical camera.")
+                    break
+                emitter.send_frame(frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
     except IOError as e:
-        print(f"Setup or Camera Error: {e}")
+        print(f"Test failed due to IOError: {e}")
     except Exception as e:
-        print(f"An unexpected error occurred during streaming: {e}")
-
-    cv2.destroyAllWindows() # Ensures any hidden OpenCV windows are closed if any were used internally
-    print("--- Test Finished ---")
+        print(f"An unexpected error occurred during the test: {e}")
+    finally:
+        cap.release()
+        cv2.destroyAllWindows()
+        print("--- Virtual Camera Emitter Test Finished ---")
