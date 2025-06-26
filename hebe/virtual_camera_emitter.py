@@ -26,7 +26,7 @@ class VirtualCameraEmitter:
     def _check_v4l2loopback_device_status(self) -> bool:
         """
         Checks if the specified virtual camera device exists and is likely from v4l2loopback.
-        Provides user guidance if issues are found.
+        This version uses a more robust two-step regex approach.
         """
         if not self.device_path:
             print("VirtualCameraEmitter: Warning: No specific virtual device path provided. Cannot perform pre-check.")
@@ -34,22 +34,53 @@ class VirtualCameraEmitter:
 
         print(f"VirtualCameraEmitter: Checking status of virtual device {self.device_path}...")
         try:
-            # Use v4l2-ctl to list devices and check if our device path is there
             result = subprocess.run(['v4l2-ctl', '--list-devices'], capture_output=True, text=True, check=True)
             output = result.stdout
 
-            # Find the section in the output that corresponds to our device_path
-            # We look for the path and then for "v4l2loopback" in its associated description
-            # This regex is more robust to whitespace and captures the device name.
-            device_section_pattern = r"(?P<device_name>[^\n]+?)\s+\(.+?platform:v4l2loopback.+?\)\s*(\n\s*" + re.escape(self.device_path) + r")"
-            match = re.search(device_section_pattern, output)
+            print("VirtualCameraEmitter: DEBUG: Raw v4l2-ctl output received (using repr()):")
+            print(repr(output))
+            print("------------------------------------------------------------------")
 
-            if match:
-                device_name = match.group('device_name').strip()
-                print(f"VirtualCameraEmitter: Confirmed '{device_name}' ({self.device_path}) is a v4l2loopback device.")
+            # Strategy:
+            # 1. Use a regex to iterate and capture each distinct device block.
+            # 2. For each block, check if it contains our target device_path AND 'platform:v4l2loopback'.
+
+            # Regex to find each device entry (block).
+            # It looks for a line starting with a non-whitespace character (device header)
+            # and captures the header and all subsequent indented lines until the next non-indented line or end of string.
+            # `(?:^|\n)([^\s\n][^\n]*?):\s*\n` captures the header (Group 1)
+            # `(.*?)(?=(?:^[^\s\n])|\Z)` captures the content until the next non-indented line or end of string (Group 2)
+            device_entry_regex = r"(?:^|\n)([^\s\n][^\n]*?):\s*\n(.*?)(?=(?:^[^\s\n])|\Z)"
+            
+            found_v4l2loopback_device = False
+            device_name_found = "Unknown Device"
+
+            # Iterate through all device entries found in the v4l2-ctl output
+            for match in re.finditer(device_entry_regex, output, re.MULTILINE | re.DOTALL):
+                device_header = match.group(1) # e.g., "Dummy video device (0x0000) (platform:v4l2loopback-000)"
+                device_details = match.group(2) # e.g., "\t/dev/video0\n"
+
+                # Check if our target device_path is present within the details of this specific block
+                if self.device_path in device_details:
+                    # If the device_path is found, now check if this block also contains the v4l2loopback identifier
+                    # We check both header and details as 'platform:v4l2loopback' can be in either based on format
+                    if "platform:v4l2loopback" in device_header or "platform:v4l2loopback" in device_details:
+                        found_v4l2loopback_device = True
+                        
+                        # Extract a cleaner device name for the confirmation message
+                        device_name_match = re.search(r"([^\n(]+?)\s*\(", device_header)
+                        if device_name_match:
+                            device_name_found = device_name_match.group(1).strip()
+                            # Clean up common "(0x0000)" if present in the name
+                            device_name_found = re.sub(r'\s*\(0x[0-9a-fA-F]+\)$', '', device_name_found).strip()
+                        break # Found our target v4l2loopback device
+
+            if found_v4l2loopback_device:
+                print(f"VirtualCameraEmitter: Confirmed '{device_name_found}' ({self.device_path}) is a v4l2loopback device.")
                 return True
             else:
                 print(f"VirtualCameraEmitter: Error: Virtual device {self.device_path} not found or not recognized as a v4l2loopback device by 'v4l2-ctl'.")
+                print("VirtualCameraEmitter: This means either the device path is not listed, or the device listed at that path is not a v4l2loopback type.")
                 return False
 
         except FileNotFoundError:
@@ -116,10 +147,15 @@ class VirtualCameraEmitter:
         else:
             print("VirtualCameraEmitter: Warning - Virtual camera not initialized. Frame not sent.")
 
-# Example of how to use it (for testing purposes)
+# Example of how to use it (for testing purposes) - keep this for module-level testing
 if __name__ == "__main__":
-    # This block is for testing this module independently.
-    # It attempts to open a camera and stream to a virtual one.
+    # Ensure you have opencv-python for this test block to work
+    try:
+        import cv2
+    except ImportError:
+        print("Install opencv-python (`pip install opencv-python`) to run VirtualCameraEmitter test.")
+        exit()
+
     print("--- Virtual Camera Emitter Test ---")
     print("Opening physical webcam and streaming to a virtual device.")
     print("You might need to run `sudo modprobe v4l2loopback devices=1 exclusive_caps=1 card_label=\"MySmoothedCam\"` first.")
@@ -127,7 +163,7 @@ if __name__ == "__main__":
     # Use your physical camera index, e.g., 0 or 1
     # Use your virtual camera path, e.g., '/dev/video0'
     PHYSICAL_CAM_INDEX = 0
-    VIRTUAL_CAM_TEST_PATH = '/dev/video1' # Default for many systems
+    VIRTUAL_CAM_TEST_PATH = '/dev/video0' # Assuming /dev/video0 is your virtual device
 
     cap = cv2.VideoCapture(PHYSICAL_CAM_INDEX)
     if not cap.isOpened():
@@ -142,8 +178,8 @@ if __name__ == "__main__":
 
     try:
         with VirtualCameraEmitter(width=width, height=height, fps=fps, device_path=VIRTUAL_CAM_TEST_PATH) as emitter:
-            print("Streaming to virtual camera. Check Cheese or Google Meet.")
-            print("Press 'q' in this terminal to quit.")
+            print("\nStreaming to virtual camera. Check Cheese, OBS, or Google Meet.")
+            print("Press 'q' in this terminal to quit the test.")
             while True:
                 ret, frame = cap.read()
                 if not ret:

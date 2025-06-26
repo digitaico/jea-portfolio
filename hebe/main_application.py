@@ -39,8 +39,6 @@ class MainApplication:
         print("MainApplication: Starting...")
 
         try:
-            # Using context managers for CameraHandler and VirtualCameraEmitter
-            # This ensures resources are properly released even if errors occur
             with CameraHandler(camera_index=self.camera_index) as camera_handler:
                 self.camera_handler = camera_handler
 
@@ -51,7 +49,7 @@ class MainApplication:
                     self.virtual_camera_emitter = virtual_camera_emitter
 
                     print("\nPress 'q' in the console to quit the application.")
-                    print("Also, check your video conferencing app (e.g., Cheese, Google Meet) and select the virtual camera 'MySmoothedCam'.")
+                    print("Also, check your video conferencing app (e.g., Cheese, Google Meet) and select the virtual camera 'VirtualAICam'.") # Updated name
 
                     while True:
                         ret, frame = self.camera_handler.read_frame()
@@ -60,41 +58,42 @@ class MainApplication:
                             break
 
                         # --- Frame Processing Logic ---
-                        # Start with a copy of the original frame to avoid modifying the original directly
-                        processed_frame = frame.copy()
+                        # Start with a copy of the original frame for MediaPipe processing
+                        # MediaPipe might draw landmarks on this copy if enabled in FaceMeshProcessor
+                        processed_for_facemesh = frame.copy() 
 
                         # Step 1: Process frame to detect facial landmarks
-                        # process_frame returns the image (possibly with drawn landmarks for debug) and the MediaPipe results
-                        # We are passing 'processed_frame' which is a copy, and this copy might get landmark drawings.
-                        # However, for the blur, we'll use the 'frame' (original) to blend with.
-                        display_frame_for_debug, results = self.face_mesh_processor.process_frame(processed_frame)
+                        # This returns the image (potentially with drawn landmarks) and the MediaPipe results
+                        _, results = self.face_mesh_processor.process_frame(processed_for_facemesh) # Don't need the image with drawn landmarks here, just the results
+
+                        # Initialize processed_frame to be the original frame by default
+                        final_output_frame = frame.copy()
 
                         # Check if face landmarks were detected
                         if results.multi_face_landmarks:
                             # Take the landmarks of the first detected face for smoothing
                             landmarks = results.multi_face_landmarks[0]
 
-                            # Step 2: Generate the nasolabial mask based on landmarks
-                            # Pass the original frame's shape as the mask needs to match the frame dimensions
-                            mask = self.nasolabial_mask_generator.generate_mask(frame.shape, landmarks)
+                            # Step 2: Generate the nasolabial mask based on landmarks AND the current frame data
+                            # IMPORTANT CHANGE: Pass the actual 'frame' (BGR image) to generate_mask
+                            mask = self.nasolabial_mask_generator.generate_mask(frame, landmarks)
 
                             # Step 3: Apply the smoothing effect to the original frame using the generated mask
-                            # The result is the processed_frame that will be sent out
-                            processed_frame = self.image_effect_applier.apply_gaussian_blur(frame, mask, kernel_size=(45, 45), sigmaX=0)
-                        # If no face is detected, processed_frame remains the original frame copy
-                        # (or the frame with debug landmarks if face_mesh_processor draws them)
-
-                        # Send the processed frame (either smoothed or original) to the virtual camera
-                        self.virtual_camera_emitter.send_frame(processed_frame)
+                            # The result is the final_output_frame that will be sent out
+                            final_output_frame = self.image_effect_applier.apply_gaussian_blur(frame, mask, kernel_size=(45, 45), sigmaX=0)
+                        
+                        # Send the final processed frame (either smoothed or original) to the virtual camera
+                        self.virtual_camera_emitter.send_frame(final_output_frame)
 
                         # --- Debug/Visualization (Optional) ---
                         # Uncomment these lines to see the processed_frame on your local desktop
                         # This might impact performance slightly and is not part of the virtual camera stream.
-                        # cv2.imshow('Smoothed Output (Local Debug)', processed_frame)
-                        # if results.multi_face_landmarks: # Show original with landmarks if detected
-                        #    cv2.imshow('Original with Landmarks (Local Debug)', display_frame_for_debug)
-                        # else:
-                        #    cv2.imshow('Original with Landmarks (Local Debug)', frame) # Show raw if no landmarks
+                        # cv2.imshow('Smoothed Output (Local Debug)', final_output_frame)
+                        # # You could also show the mask for debugging
+                        # # if results.multi_face_landmarks:
+                        # #     cv2.imshow('Mask (Local Debug)', mask)
+                        # # else:
+                        # #     cv2.imshow('Mask (Local Debug)', np.zeros_like(mask)) # Show black if no mask
 
                         # Check for quit keypress
                         if cv2.waitKey(1) & 0xFF == ord('q'):
