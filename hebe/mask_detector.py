@@ -54,7 +54,7 @@ class MaskDetector:
 
     def create_edge_roi_mask(self, image_shape: tuple[int, int, int], 
                              face_edges_visual: cv2.Mat, 
-                             dilation_kernel_size: int = 5,
+                             dilation_kernel_size: int = 3,
                              apply_general_face_mask: cv2.Mat | None = None) -> cv2.Mat:
         """
         Creates a binary mask defining ROIs around general detected edges (e.g., wrinkles).
@@ -92,7 +92,7 @@ class MaskDetector:
     def create_nasolabial_mask(self, 
                                image_shape: tuple[int, int, int], 
                                all_faces_points: list[list[tuple[int, int]]], # Now accepts list of lists
-                               dilation_kernel_size: int = 15, 
+                               dilation_kernel_size: int = 3, 
                                apply_general_face_mask: cv2.Mat | None = None) -> cv2.Mat:
         """
         Creates a binary mask for the nasolabial fold regions using specific MediaPipe landmarks.
@@ -120,9 +120,9 @@ class MaskDetector:
         # These are empirical and can be fine-tuned based on visual inspection.
         nasolabial_paths_indices = [
             # Right fold (viewer's left side of face) - approximate path
-            [270, 271, 269, 427, 308, 311, 312], 
+            [203,206,216,212,186,92,64,129], 
             # Left fold (viewer's right side of face) - approximate path
-            [40, 41, 39, 207, 78, 81, 82],     
+            [294,423,426,436,287,410,294,478],     
         ]
         
         for face_points in all_faces_points:
@@ -137,7 +137,7 @@ class MaskDetector:
                 
                 if len(current_path_points) > 1: # Need at least 2 points for a line
                     temp_mask_for_line = np.zeros((h, w), dtype=np.uint8)
-                    cv2.polylines(temp_mask_for_line, [np.array(current_path_points)], isClosed=False, color=255, thickness=2)
+                    cv2.polylines(temp_mask_for_line, [np.array(current_path_points)], isClosed=False, color=255, thickness=1)
 
                     kernel = np.ones((dilation_kernel_size, dilation_kernel_size), np.uint8)
                     dilated_line = cv2.dilate(temp_mask_for_line, kernel, iterations=1)

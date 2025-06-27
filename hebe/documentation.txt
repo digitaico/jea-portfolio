@@ -9,5 +9,6 @@ https://gist.github.com/UnaNancyOwen/3f06d4a0d04f3a75cc62563aafbac332
 
 // run app
 sudo rmmod v4l2loopback
+sudo modprobe v4l2loopback devices=1 exclusive_caps=1 video_nr=0
 sudo modprobe v4l2loopback devices=1 exclusive_caps=1 card_label="DigitalMakeupCam" video_nr=0
 p3 main_application.py --camera-index 1 --virtual-camera-path /dev/video0
