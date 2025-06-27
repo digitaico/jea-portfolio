@@ -101,6 +101,15 @@ venv.bak/
 .spyderproject
 .spyproject
 
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+__pycache__/
+pycache/
+**/__pycache__/
+.pyc
+*.pyc
+
 # Rope project settings
 .ropeproject
 
