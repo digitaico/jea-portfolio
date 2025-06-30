@@ -96,11 +96,9 @@ class MainApplication:
                     nasolabial_mask = self.mask_detector.create_nasolabial_mask(
                         processed_frame.shape, 
                         all_faces_points, 
-                        dilation_kernel_size=5, 
+                        dilation_kernel_size=7, 
                         apply_general_face_mask=face_mask_binary 
                     )
-
-                 
 
                     # --- Apply Digital Makeup Effects ---
                     image_with_makeup = processed_frame
@@ -109,12 +107,9 @@ class MainApplication:
                     image_with_makeup = self.digital_filters.apply_targeted_blur(
                         image_with_makeup, 
                         nasolabial_mask, 
-                        kernel_size=(15, 15), 
-                        alpha=0.8
+                        kernel_size=(75, 75), 
+                        alpha=1.0
                     )
-
-                 
-
 
                     # --- Visualization (drawn on image_with_makeup) ---
                     final_frame = image_with_makeup
@@ -132,7 +127,7 @@ class MainApplication:
                     #final_frame = draw_face_mask_overlay(final_frame, general_edge_roi_mask, mask_color=(0, 0, 255), alpha=0.5) 
                     
                     # Draw the semi-transparent NASOLABIAL mask overlay (CYAN)
-                    #final_frame = draw_face_mask_overlay(final_frame, nasolabial_mask, mask_color=(255, 255, 0), alpha=0.7) 
+                    #final_frame = draw_face_mask_overlay(final_frame, nasolabial_mask, mask_color=(255, 255, 0), alpha=0.3) 
 
                     # Send the final processed frame to the virtual camera
                     self.virtual_camera_emitter.send_frame(final_frame)
