@@ -6,7 +6,7 @@ def nothing(x):
     pass
 
 def run_hsv_tuner(image_path='apron-1.jpg'):
-    display_witdth = 600
+    display_width = 600
     display_height  = 600
 
     img = cv2.imread(image_path)
@@ -19,7 +19,7 @@ def run_hsv_tuner(image_path='apron-1.jpg'):
     height, width = img.shape[:2]
     aspect_ratio = width / height   
     if aspect_ratio > 1:
-        new_width = display_witdth
+        new_width = display_width
         new_height = int(new_width / aspect_ratio)
     else:
         new_height = display_height
