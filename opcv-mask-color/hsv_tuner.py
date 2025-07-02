@@ -5,7 +5,7 @@ import os
 def nothing(x):
     pass
 
-def run_hsv_tuner(image_path='apron-1.jpg'):
+def run_hsv_tuner(image_path='outline_ga.jpg'):
     display_width = 600
     display_height  = 600
 
@@ -106,6 +106,7 @@ def run_hsv_tuner(image_path='apron-1.jpg'):
     print("Recuerda guardar los valores encontrados.")
 
 if __name__ == "__main__":
-    run_hsv_tuner(image_path = 'apron-1.jpg')
+    image_path = 'template-2.jpg'  # Default image path
+    run_hsv_tuner(image_path)
 
 
