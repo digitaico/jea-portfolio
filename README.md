@@ -4,7 +4,6 @@
 
 
 | Project | Language | Topic | Publishing date |
-
 |:--|--:|:--:|--:|
 | ATS | Python | Machine Learning, NLP | 2025-04-01 |
 | Pose Estimation | Python | Machine Learning, MediaPipe | 2025-06-10 |
