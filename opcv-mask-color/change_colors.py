@@ -30,15 +30,34 @@ def change_colors(image_path, body_mask_path, pockets_mask_path, webbing_mask_pa
     mask_pockets_raw = cv2.imread(pockets_mask_path, cv2.IMREAD_GRAYSCALE)
     mask_webbing = cv2.imread(webbing_mask_path, cv2.IMREAD_GRAYSCALE)
 
-    for mask_name, mask_data in [("body mask", mask_body_raw), ("pockets mask", mask_pockets_raw), ("webbing mask", mask_webbing)]:
-        if mask_data is None:
-            print(f"Error: {mask_name} not found! Check path: '{eval(mask_name.replace(' ', '_') + '_path')}'")
-            return
-        if img.shape[:2] != mask_data.shape[:2]:
-            print(f"Warning: {mask_name} dimensions ({mask_data.shape[:2]}) do not match image dimensions ({img.shape[:2]}). Resizing...")
-            mask_data = cv2.resize(mask_data, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
-        # Ensure masks are binary (pure black 0 or pure white 255)
-        eval(f'{mask_name.replace(" ", "_")}_raw = cv2.threshold(mask_data, 128, 255, cv2.THRESH_BINARY)[1]') # This reassigns to the original var names
+    # Validate and prepare each mask
+    if mask_body_raw is None:
+        print(f"Error: Body mask not found! Check path: '{body_mask_path}'")
+        return
+    if img.shape[:2] != mask_body_raw.shape[:2]:
+        print(f"Warning: Body mask dimensions ({mask_body_raw.shape[:2]}) do not match image dimensions ({img.shape[:2]}). Resizing...")
+        mask_body_raw = cv2.resize(mask_body_raw, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
+    mask_body_raw = cv2.threshold(mask_body_raw, 128, 255, cv2.THRESH_BINARY)[1]
+
+    if mask_pockets_raw is None:
+        print(f"Error: Pockets mask not found! Check path: '{pockets_mask_path}'")
+        return
+    if img.shape[:2] != mask_pockets_raw.shape[:2]:
+        print(f"Warning: Pockets mask dimensions ({mask_pockets_raw.shape[:2]}) do not match image dimensions ({img.shape[:2]}). Resizing...")
+        mask_pockets_raw = cv2.resize(mask_pockets_raw, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
+    mask_pockets_raw = cv2.threshold(mask_pockets_raw, 128, 255, cv2.THRESH_BINARY)[1]
+
+    if mask_webbing is None:
+        print(f"Error: Webbing mask not found! Check path: '{webbing_mask_path}'")
+        return
+    if img.shape[:2] != mask_webbing.shape[:2]:
+        print(f"Warning: Webbing mask dimensions ({mask_webbing.shape[:2]}) do not match image dimensions ({img.shape[:2]}). Resizing...")
+        mask_webbing = cv2.resize(mask_webbing, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
+    mask_webbing = cv2.threshold(mask_webbing, 128, 255, cv2.THRESH_BINARY)[1]
+
+    # --- DILATE the webbing mask slightly to ensure full coverage of original webbing pixels ---
+    kernel_dilate_webbing = np.ones((3,3), np.uint8) # Small 3x3 kernel for dilation
+    mask_webbing = cv2.dilate(mask_webbing, kernel_dilate_webbing, iterations=1)
 
 
     # --- Pre-processing: Gaussian Blur for noise reduction on the colored image ---
@@ -132,6 +151,9 @@ def change_colors(image_path, body_mask_path, pockets_mask_path, webbing_mask_pa
         colored_background = np.full_like(img, new_background_bgr, dtype=np.uint8)
         result = np.where(mask_background[:, :, None] == 255, colored_background, result)
 
+    # --- FINAL STEP: Convert the output image from BGR to RGB for correct display in most viewers ---
+    result = cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+
 
     # --- Save the output image ---
     output_dir = os.path.dirname(output_path)
@@ -145,7 +167,7 @@ def change_colors(image_path, body_mask_path, pockets_mask_path, webbing_mask_pa
     except Exception as e:
         print(f"Error saving image {output_path}: {e}")
 
-# List of color combinations (using contrasting BGR tuples)
+# List of color combinations (using contrasting BGR tuples, but output will be RGB)
 color_combinations = [
     {
        "file": "output/apron-body-pockets-green-test.webp", # Output filename
