@@ -16,7 +16,7 @@ def change_colors(image_path, body_mask_path, pockets_mask_path, webbing_mask_pa
     if img is None:
         print(f"Error: Main image '{image_path}' not found!")
         return  
-
+    
     img_height, img_width = img.shape[:2]
 
     # --- Load and validate Body Mask ---
@@ -79,16 +79,45 @@ def change_colors(image_path, body_mask_path, pockets_mask_path, webbing_mask_pa
     mask_apparel_overall = cv2.bitwise_or(mask_apparel_overall, mask_webbing_final)
 
 
-    # --- Apply colors directly in BGR space ---
-    result_bgr = img.copy() # Start with the original image
+    # --- Apply colors while preserving original luminosity/texture for both body and pockets ---
 
-    # Apply body color
-    result_bgr[mask_body_final == 255] = body_bgr
+    # Convert original image to HSV once for luminosity extraction
+    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    
+    # Get the HSV values for the target colors (body and pockets)
+    body_hsv_color = cv2.cvtColor(np.uint8([[body_bgr]]), cv2.COLOR_BGR2HSV)[0][0]
+    overlay_hsv_color = cv2.cvtColor(np.uint8([[over_bgr]]), cv2.COLOR_BGR2HSV)[0][0]
 
-    # Apply pockets color
-    result_bgr[mask_pockets_final == 255] = over_bgr
+    # Create a mutable copy of the original image's HSV data to apply changes
+    # All modifications to hue/saturation will happen on this copy, preserving original Value (luminosity)
+    modified_apparel_hsv = img_hsv.copy()
 
-    # Webbing retains original color (no modification needed here as we started with img.copy())
+    # --- Process Body Mask (with preserved texture) ---
+    # Apply target Hue and Saturation to the body area where the mask is active
+    modified_apparel_hsv[mask_body_final == 255, 0] = body_hsv_color[0] # Apply new Hue
+    modified_apparel_hsv[mask_body_final == 255, 1] = body_hsv_color[1] # Apply new Saturation
+    # The Value (luminosity) channel (index 2) is left untouched from original img_hsv for the body.
+
+    # --- Process Pockets Mask (with preserved texture) ---
+    # Apply target Hue and Saturation to the pockets area where the mask is active
+    modified_apparel_hsv[mask_pockets_final == 255, 0] = overlay_hsv_color[0] # Apply new Hue
+    modified_apparel_hsv[mask_pockets_final == 255, 1] = overlay_hsv_color[1] # Apply new Saturation
+    # The Value (luminosity) channel (index 2) is left untouched from original img_hsv for the pockets.
+
+
+    # Convert the fully modified HSV image (apparel parts now colored with preserved texture) back to BGR
+    result_bgr_apparel_colored = cv2.cvtColor(modified_apparel_hsv, cv2.COLOR_HSV2BGR)
+
+    # Start the final result image with the original image (to keep webbing, etc., intact)
+    result_bgr = img.copy() 
+    
+    # Now, blend the newly colored apparel parts onto the original image.
+    # Where the overall apparel mask is active, take pixels from result_bgr_apparel_colored.
+    # Otherwise, keep pixels from the original image (which result_bgr currently is).
+    result_bgr = np.where(mask_apparel_overall[:, :, None] == 255, result_bgr_apparel_colored, result_bgr)
+    
+    # This ensures that webbing (part of the original image but not explicitly colored)
+    # and the original background (before new_background_bgr is applied) are preserved correctly.
 
 
     # --- Debugging: Show final masks and the direct BGR result ---
@@ -168,49 +197,38 @@ def change_colors(image_path, body_mask_path, pockets_mask_path, webbing_mask_pa
         print(f"Created output directory: {output_dir}")
 
     try:
-        # Save debug output in PNG format (using OpenCV for consistency here)
+        # Save debug output in PNG format
         cv2.imwrite(os.path.join(output_dir, "debug_final_output.png"), result_rgb)
         print(f"Saved debug_final_output.png in {output_dir}")
-
+        
         # --- Using Pillow to save the final output ---
-        # Convert NumPy array to Pillow Image object
         img_pil = Image.fromarray(result_rgb)
-
-        # Determine the output format based on the original output_path extension
+        
         ext = os.path.splitext(output_path)[1].lower()
 
         if ext == '.webp':
-            # Quality 90 for WebP
             img_pil.save(output_path, quality=90)
             print(f"Successfully generated (via Pillow): {output_path}")
         elif ext == '.png':
-            img_pil.save(output_path) # PNG is lossless by default, no quality param needed
+            img_pil.save(output_path)
             print(f"Successfully generated (via Pillow): {output_path}")
         elif ext == '.jpg' or ext == '.jpeg':
-            img_pil.save(output_path, quality=90) # Quality 90 for JPG
+            img_pil.save(output_path, quality=90)
             print(f"Successfully generated (via Pillow): {output_path}")
         else:
-            # Fallback to OpenCV if format not explicitly handled by Pillow, or raise error
             cv2.imwrite(output_path, result_rgb) 
             print(f"Warning: Output format {ext} not explicitly handled by Pillow with specific settings. Saved using OpenCV.")
 
 
-    except ImportError:
-        print("Pillow (PIL) not found. Please install it: pip install Pillow")
-        # Fallback to OpenCV saving if Pillow is not installed
-        # This fallback assumes the original desired format (e.g., .webp) and might still have the issue.
-        # It's crucial to install Pillow.
-        cv2.imwrite(output_path, result_rgb, [cv2.IMWRITE_WEBP_QUALITY, 90]) 
-        print(f"Fallback: Successfully generated (using OpenCV) without explicit sRGB for: {output_path}")
     except Exception as e:
-        print(f"Error saving image {output_path} with Pillow or OpenCV: {e}")
+        print(f"Error saving image {output_path} or debug_final_output.png: {e}")
 
 if __name__ == "__main__":
     input_image_template = 'template.jpg'
     body_mask_image = 'body_mask.png' 
     pockets_mask_image = 'pockets_mask.png'
-    webbing_mask_image = 'webbing_mask.png'
-
+    webbing_mask_image = 'webbing_mask.png' # Assuming this mask is still valid and present
+    
     csv_file_path = 'color_combinations.csv' 
 
     color_combinations = []
@@ -234,15 +252,15 @@ if __name__ == "__main__":
 
         body_hex_color = combo['body']
         overlay_hex_color = combo['overlay']
-
+        
         body_bgr_color = hex_to_bgr(body_hex_color)
         overlay_bgr_color = hex_to_bgr(overlay_hex_color)
-
+        
         new_bg_color = (255, 255, 255) # White background
 
         print(f"Generating {output_filename} with body color {body_hex_color} and overlay color {overlay_hex_color}")
-
+        
         # Ensure debug_mode=True for the first run to verify new masks and colors
-        change_colors(input_image_template, body_mask_image, pockets_mask_image, webbing_mask_image, output_filename, body_bgr_color, overlay_bgr_color, new_background_bgr=new_bg_color, debug_mode=True) 
+        change_colors(input_image_template, body_mask_image, pockets_mask_image, webbing_mask_image, output_filename, body_bgr_color, overlay_bgr_color, new_background_bgr=new_bg_color, debug_mode=False) 
 
     print("\n--- Batch generation completed ---")
