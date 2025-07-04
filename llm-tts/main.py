@@ -18,7 +18,7 @@ Jorge: Take your time!
 """
 
 # Split the dialogue into chunks
-rt = RecursiveCharacterTextSplitter(separator="\n\n", chunk_size=100, chunk_overlap=20)
+rt = RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=20)
 chunks = rt.split_text(talk)  # Split the dialogue into chunks
 
 # Print the chunks
