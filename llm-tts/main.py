@@ -6,7 +6,7 @@ from typing import Any
 
 # Dialogue: Sample, English
 talk = """
-Jorge: This was a ling run man!
+Jorge: This was a long run man!
 John: I didn't expect to finish! it was hard!
 Jorge: You did good! I managed to chase and catch you!
 John: I'm not sure if I should be proud or ashamed!
@@ -26,7 +26,7 @@ for i, chunk in enumerate(chunks):
     print(f"Chunk {i+1}: {chunk}")
 
 # Load the TTS pipeline
-tts = pipeline("text-to-speech", model="suno/bark", device="cpu")
+tts = pipeline("automatic-speech-recognition", model="suno/bark", device="cuda")
 
 # Generate the audio for each chunk
 audio_all = np.array([])
