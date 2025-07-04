@@ -26,7 +26,7 @@ for i, chunk in enumerate(chunks):
     print(f"Chunk {i+1}: {chunk}")
 
 # Load the TTS pipeline
-tts = pipeline("automatic-speech-recognition", model="suno/bark", device="cuda")
+tts: Any = pipeline("text-to-speech", model="suno/bark", device="cuda")  # type: ignore[arg-type]
 
 # Generate the audio for each chunk
 audio_all = np.array([])
