@@ -11,6 +11,7 @@ def hex_to_bgr(hex_color):
     rgb = tuple(int(hex_color[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
     return (rgb[2], rgb[1], rgb[0])
 
+
 def change_colors(image_path, body_mask_path, pockets_mask_path, webbing_mask_path, output_path, body_bgr, over_bgr, new_background_bgr=None, debug_mode=False):
     img = cv2.imread(image_path)
     if img is None:
@@ -85,8 +86,12 @@ def change_colors(image_path, body_mask_path, pockets_mask_path, webbing_mask_pa
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     
     # Get the HSV values for the target colors (body and pockets)
-    body_hsv_color = cv2.cvtColor(np.uint8([[body_bgr]]), cv2.COLOR_BGR2HSV)[0][0]
-    overlay_hsv_color = cv2.cvtColor(np.uint8([[over_bgr]]), cv2.COLOR_BGR2HSV)[0][0]
+    body_hsv_color = cv2.cvtColor(
+        np.array([[body_bgr]], dtype=np.uint8), cv2.COLOR_BGR2HSV
+    )[0, 0]
+    overlay_hsv_color = cv2.cvtColor(
+        np.array([[over_bgr]], dtype=np.uint8), cv2.COLOR_BGR2HSV
+    )[0, 0]
 
     # Create a mutable copy of the original image's HSV data to apply changes
     # All modifications to hue/saturation will happen on this copy, preserving original Value (luminosity)
