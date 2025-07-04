@@ -15,7 +15,6 @@ John: Thanks!
 Jorge: You're welcome!
 John: I'm going to take a break!
 Jorge: Take your time!
-John: I'm going to take a break!
 """
 
 # Split the dialogue into chunks
@@ -27,7 +26,7 @@ for i, chunk in enumerate(chunks):
     print(f"Chunk {i+1}: {chunk}")
 
 # Load the TTS pipeline
-tts: Any = pipeline("text-to-speech", model="suno/bark", device="cuda")  # type: ignore
+tts = pipeline("text-to-speech", model="suno/bark", device="cpu")
 
 # Generate the audio for each chunk
 audio_all = np.array([])
