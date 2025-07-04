@@ -3,6 +3,7 @@ from transformers.pipelines import pipeline
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import numpy as np
 from typing import Any
+from scipy.io import wavfile
 
 # Dialogue: Sample, English
 talk = """
@@ -28,11 +29,19 @@ for i, chunk in enumerate(chunks):
 # Load the TTS pipeline
 tts: Any = pipeline("text-to-speech", model="suno/bark", device="cuda")  # type: ignore[arg-type]
 
-# Generate the audio for each chunk
+# Generate the audio for each chunk and collect sampling rate
 audio_all = np.array([])
+sampling_rate = None
 for i, chunk in enumerate(chunks):
     audio = tts(chunk)
-    audio_all = np.concatenate((audio_all, audio['audio']), axis=None)
+    # Capture the sampling rate from the first chunk
+    if sampling_rate is None:
+        sampling_rate = audio["sampling_rate"]
+    audio_all = np.concatenate((audio_all, audio["audio"]), axis=None)
 
-# Play the audio
-Audio(audio_all, rate=15900)
+# Save the concatenated audio to a WAV file
+if sampling_rate is None:
+    raise ValueError("Sampling rate was not returned by the TTS pipeline.")
+
+wavfile.write("dialogue_output.wav", sampling_rate, audio_all.astype(np.float32))
+print("Audio saved to dialogue_output.wav")
