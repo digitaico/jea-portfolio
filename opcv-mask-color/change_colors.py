@@ -4,6 +4,9 @@ import os
 import json
 import csv
 from PIL import Image # Import Pillow
+from openai import opencv_client
+
+client = opencv_client.OpenCVClient()
 
 def hex_to_bgr(hex_color):
     hex_color = hex_color.lstrip('#')
