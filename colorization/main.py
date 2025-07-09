@@ -29,7 +29,7 @@ def hex_to_bgr(hex_color: str) -> tuple[int, int, int]:
     r = int(hex_color[0:2], 16)
     g = int(hex_color[2:4], 16)
     b = int(hex_color[4:6], 16)
-    return (b, g, r)
+    return (r, g, b)
 
 
 def load_mask(path: str, target_shape: tuple[int, int]) -> np.ndarray:
@@ -75,8 +75,8 @@ print(f"Generating {len(combos)} colour-ways …")
 
 for row in combos:
     file_base   = os.path.splitext(row['filename'].strip())[0]
-    body_hex    = row['body'].strip()
-    pockets_hex = row['overlay'].strip()
+    body_hex    = row['body_color'].strip()
+    pockets_hex = row['pockets_color'].strip()
 
     # Convert to BGR & then LAB single pixel
     body_bgr        = np.array([[hex_to_bgr(body_hex)]],    dtype=np.uint8)
