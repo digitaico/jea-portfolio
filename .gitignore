@@ -161,6 +161,7 @@ log/
 *.webm
 *.mp4
 
+*.webp
 *.png
 *.jpg
 *.jpeg
