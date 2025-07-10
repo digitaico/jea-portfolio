@@ -11,7 +11,7 @@ SCRIPT_DIR         = os.path.dirname(__file__)
 TEMPLATE_IMG       = os.path.join(SCRIPT_DIR, 'assets', 'template.jpg')
 MASK_BODY_PATH     = os.path.join(SCRIPT_DIR, 'assets', 'body_mask.png')
 MASK_POCKETS_PATH  = os.path.join(SCRIPT_DIR, 'assets', 'pockets_mask.png')
-MASK_WEBBING_PATH  = os.path.join(SCRIPT_DIR, 'assets', 'webbing_mask.png')
+MASK_WEBBING_PATH  = os.path.join(SCRIPT_DIR, 'assets', 'webbings_mask.png')
 CSV_COLORS         = os.path.join(SCRIPT_DIR, 'data',   'color_combinations.csv')
 OUTPUT_DIR         = os.path.join(SCRIPT_DIR, 'output', datetime.now().strftime('%Y%m%d_%H%M%S'))
 
@@ -55,7 +55,8 @@ H, W = img_bgr.shape[:2]
 mask_body     = load_mask(MASK_BODY_PATH,    (H, W))
 mask_pockets  = load_mask(MASK_POCKETS_PATH, (H, W))
 mask_webbing  = load_mask(MASK_WEBBING_PATH, (H, W))
-# Helper combined masks for quicker operations
+# Helper combined masks for quicker operations 
+#---------------------------------------------------------------------------------------------------------------
 mask_body_inds    = mask_body.astype(bool)
 mask_pockets_inds = mask_pockets.astype(bool)
 # Webbing untouched – no need for bool array
@@ -77,10 +78,13 @@ for row in combos:
     file_base   = os.path.splitext(row['filename'].strip())[0]
     body_hex    = row['body_color'].strip()
     pockets_hex = row['pockets_color'].strip()
-
+    
     # Convert to BGR & then LAB single pixel
     body_bgr        = np.array([[hex_to_bgr(body_hex)]],    dtype=np.uint8)
     pockets_bgr     = np.array([[hex_to_bgr(pockets_hex)]], dtype=np.uint8)
+
+    print(f"file: {file_base} | body_color: {body_bgr} | pockets: {pockets_bgr}")
+
     body_lab        = cv2.cvtColor(body_bgr,    cv2.COLOR_BGR2LAB)[0,0]
     pockets_lab     = cv2.cvtColor(pockets_bgr, cv2.COLOR_BGR2LAB)[0,0]
 
@@ -110,12 +114,13 @@ for row in combos:
     # -------- Merge & convert back --------
     lab_coloured = cv2.merge([L, A, B])
     out_bgr      = cv2.cvtColor(lab_coloured, cv2.COLOR_LAB2BGR)
+    out_bgr      = cv2.cvtColor(out_bgr, cv2.COLOR_BGR2RGB)
 
     # -------- Save --------
-    out_webp = os.path.join(OUTPUT_DIR, f"{file_base}_v2.webp")
+    #out_webp = os.path.join(OUTPUT_DIR, f"{file_base}_v2.webp")
     out_jpg  = os.path.join(OUTPUT_DIR, f"{file_base}_v2.jpg")
 
-    cv2.imwrite(out_webp, out_bgr)
+    #cv2.imwrite(out_webp, out_bgr)
     cv2.imwrite(out_jpg,  out_bgr, [int(cv2.IMWRITE_JPEG_QUALITY), 92])
 
     print(f" ✔ {file_base}  (body {body_hex}, pockets {pockets_hex})")
