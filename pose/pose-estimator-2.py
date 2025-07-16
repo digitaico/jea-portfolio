@@ -367,7 +367,7 @@ def try_load_custom_font():
             "/usr/share/fonts/truetype/jetbrains-mono/JetBrainsMono-Light.ttf",
             "C:\\Windows\\Fonts\\JetBrainsMono-Light.ttf",
             os.path.expanduser("~/Library/Fonts/JetBrainsMono-Light.ttf"),
-            os.path.expanduser("~/.local/share/fonts/JetBrainsMono-Light.ttf")
+            os.path.expanduser("~/.local/share/fonts/JetBrains/TrueType/JetBrains /Mono-Light.ttf")
         ]
         
         for font_path in font_paths:
