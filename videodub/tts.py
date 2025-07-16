@@ -1,4 +1,3 @@
-# https://www.geeksforgeeks.org/python-speech-recognition-on-large-audio-files/
 import speech_recognition as sr
 import os
 

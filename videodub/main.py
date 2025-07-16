@@ -1,11 +1,3 @@
-# https://www.digitalocean.com/community/tutorials/how-to-generate-and-add-subtitles-to-videos-using-python-openai-whisper-and-ffmpeg 
-# https://medium.com/@afiori_78621/transcribing-audio-in-python-using-vosk-def7487a8719
-# https://alphacephei.com/vosk/install
-# https://pythonbasics.org/transcribe-audio/
-# https://www.geeksforgeeks.org/create-a-real-time-voice-translator-using-python/
-
-
-
 import time
 import math
 from pathlib import Path
