@@ -1,4 +1,4 @@
-# POSE ESTIMATION OF HUMAN BODIES
+# RUNNING METRICS
 
 Pose Estimation is a branch of computer vision with a wide field of applications, from assessing humans in image detection to 
 helping athletes improve their movement and workers to improve ergonomics.
@@ -10,3 +10,5 @@ It uses `OpenCV` to capture read and write video frames. Also uses `MediaPipe` D
 
 Finally I estimate some metrics to help us, runners to improve speed and reduce injuries.
 
+__coded at the caribbean beach of Puerto Gaira by Jorge Eduardo__
+*Slava Ukraini!*
