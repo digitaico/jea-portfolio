@@ -1,0 +1,34 @@
+services:
+  video-processing:
+    build: ./video_processing_service
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./uploads:/app/uploads
+    environment:
+      - SERVICE_NAME=video-processing
+    
+  metrics-calculation:
+    build: ./metrics_calculation_service
+    ports:
+      - "8002:8000"
+    depends_on:
+      - video-processing
+    environment:
+      - SERVICE_NAME=metrics-calculation
+      - VIDEO_SERVICE_URL=http://video-processing:8000
+    
+  reporting:
+    build: ./reporting_service
+    ports:
+      - "8003:8000"
+    depends_on:
+      - metrics-calculation
+    environment:
+      - SERVICE_NAME=reporting
+      - METRICS_SERVICE_URL=http://metrics-calculation:8000
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"

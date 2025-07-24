@@ -11,6 +11,7 @@ from shared.models.domain import ProcessingStatus
 from .services.video_service import VideoService
 from .services.video_processor import VideoProcessor
 from .services.pose_detector import PoseDetector
+from shared.events.event_bus import EventBus
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -18,13 +19,16 @@ logger = logging.getLogger(__name__)
 
 # Global services
 video_service: VideoService = None
+event_bus: EventBus | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Initialize services
-    global video_service
+    global video_service, event_bus
+    event_bus = EventBus()
+    await event_bus.start()
     
     pose_detector = PoseDetector()
     video_processor = VideoProcessor(pose_detector)
@@ -34,6 +38,7 @@ async def lifespan(app: FastAPI):
         video_processor=video_processor,
         session_repository=None,  # Will be injected per request
         pose_repository=None,     # Will be injected per request
+        event_publisher=event_bus.publish,  # type: ignore[arg-type]
     )
     
     yield
@@ -41,6 +46,8 @@ async def lifespan(app: FastAPI):
     # Cleanup
     pose_detector.close()
     video_processor.cleanup()
+    if event_bus:
+        await event_bus.stop()
 
 
 app = FastAPI(
