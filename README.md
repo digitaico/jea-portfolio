@@ -10,6 +10,7 @@
 | Face Rejuvenation | Python | ML, Media Pipe, face detection, Gaussian Blur, OpenCV | 2025-06-25 |
 | Color Switching | Python | OpenCV, Threshold, Masks | 2025-07-1|
 | Running Metrics | Python | Machine Learning, MediaPipe, Pose Estimation, Sports | 2025-06-10 |
+| GraphQL PostgreSQL | Python | GraphQL, PostgreSQL, FastAPI, DevOps | 2025-07-20 |
 
 
 
