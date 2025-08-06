@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stage 6: Real-Time Image Processing Client</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .stage-info {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .control-group {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .control-group h3 {
+            margin-top: 0;
+            color: #4a5568;
+        }
+        
+        select, input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .progress-container {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .status {
+            font-weight: bold;
+            color: #4a5568;
+        }
+        
+        .logs {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        
+        .log-info { background: #2d3748; }
+        .log-success { background: #22543d; }
+        .log-error { background: #742a2a; }
+        .log-warning { background: #744210; }
+        
+        .websocket-status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-connected { background: #48bb78; }
+        .status-disconnected { background: #f56565; }
+        .status-connecting { background: #ed8936; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .controls, .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Stage 6: Real-Time Image Processing</h1>
+        
+        <div class="stage-info">
+            <h3>Real-Time Features Demo</h3>
+            <p>This client demonstrates Server-Sent Events (SSE), WebSocket connections, and real-time progress tracking for image transformations.</p>
+            <p><strong>Features:</strong> Real-time progress updates, WebSocket live status, Redis pub/sub integration, background processing</p>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <h3>🎨 Start Transformation</h3>
+                <select id="transformationType">
+                    <option value="brightness">Brightness Adjustment</option>
+                    <option value="contrast">Contrast Enhancement</option>
+                    <option value="sepia">Sepia Filter</option>
+                    <option value="grayscale">Grayscale Conversion</option>
+                    <option value="invert">Color Inversion</option>
+                    <option value="gaussian_blur">Gaussian Blur</option>
+                </select>
+                <input type="number" id="factor" placeholder="Factor (1.0-3.0)" value="1.3" step="0.1" min="0.1" max="5.0">
+                <button onclick="startTransformation()" id="startBtn">Start Real-Time Transformation</button>
+            </div>
+            
+            <div class="control-group">
+                <h3>🔗 Connection Status</h3>
+                <p>
+                    <span class="websocket-status" id="wsStatus"></span>
+                    <span id="wsStatusText">Disconnected</span>
+                </p>
+                <button onclick="connectWebSocket()" id="wsBtn">Connect WebSocket</button>
+                <button onclick="disconnectWebSocket()" id="wsDisconnectBtn" disabled>Disconnect</button>
+            </div>
+        </div>
+        
+        <div class="progress-container" id="progressContainer" style="display: none;">
+            <h3>📊 Real-Time Progress</h3>
+            <div class="status" id="status">Ready</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div id="progressText">0%</div>
+            <div id="currentStep">Waiting to start...</div>
+        </div>
+        
+        <div class="grid">
+            <div>
+                <h3>📝 Event Logs</h3>
+                <div class="logs" id="logs"></div>
+            </div>
+            
+            <div>
+                <h3>🎯 Active Transformations</h3>
+                <div id="activeTransformations">No active transformations</div>
+                <button onclick="refreshActive()" style="margin-top: 10px;">Refresh Active</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTransformationId = null;
+        let websocket = null;
+        let eventSource = null;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateWebSocketStatus('disconnected');
+            log('Client initialized', 'info');
+        });
+        
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logs.appendChild(logEntry);
+            logs.scrollTop = logs.scrollHeight;
+        }
+        
+        function updateWebSocketStatus(status) {
+            const statusElement = document.getElementById('wsStatus');
+            const statusText = document.getElementById('wsStatusText');
+            const connectBtn = document.getElementById('wsBtn');
+            const disconnectBtn = document.getElementById('wsDisconnectBtn');
+            
+            statusElement.className = `websocket-status status-${status}`;
+            
+            switch(status) {
+                case 'connected':
+                    statusText.textContent = 'Connected';
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = false;
+                    break;
+                case 'disconnected':
+                    statusText.textContent = 'Disconnected';
+                    connectBtn.disabled = false;
+                    disconnectBtn.disabled = true;
+                    break;
+                case 'connecting':
+                    statusText.textContent = 'Connecting...';
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = true;
+                    break;
+            }
+        }
+        
+        async function startTransformation() {
+            const transformationType = document.getElementById('transformationType').value;
+            const factor = document.getElementById('factor').value;
+            
+            if (!factor || factor < 0.1 || factor > 5.0) {
+                alert('Please enter a valid factor between 0.1 and 5.0');
+                return;
+            }
+            
+            const startBtn = document.getElementById('startBtn');
+            startBtn.disabled = true;
+            startBtn.textContent = 'Starting...';
+            
+            try {
+                const response = await fetch('http://localhost:8002/transform/realtime', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        transformation_type: transformationType,
+                        parameters: { factor: parseFloat(factor) }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentTransformationId = data.transformation_id;
+                    log(`Transformation started: ${currentTransformationId}`, 'success');
+                    
+                    // Show progress container
+                    document.getElementById('progressContainer').style.display = 'block';
+                    
+                    // Start SSE stream
+                    startSSEStream(currentTransformationId);
+                    
+                    // Update UI
+                    document.getElementById('status').textContent = 'Processing...';
+                    document.getElementById('progressText').textContent = '0%';
+                    document.getElementById('currentStep').textContent = 'Initializing...';
+                    
+                } else {
+                    throw new Error(data.detail || 'Failed to start transformation');
+                }
+                
+            } catch (error) {
+                log(`Error starting transformation: ${error.message}`, 'error');
+            } finally {
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start Real-Time Transformation';
+            }
+        }
+        
+        function startSSEStream(transformationId) {
+            if (eventSource) {
+                eventSource.close();
+            }
+            
+            eventSource = new EventSource(`http://localhost:8002/transform/${transformationId}/stream`);
+            
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                updateProgress(data);
+                log(`Progress: ${data.progress}% - ${data.message}`, 'info');
+            };
+            
+            eventSource.onerror = function(error) {
+                log('SSE connection error', 'error');
+                eventSource.close();
+            };
+        }
+        
+        function updateProgress(data) {
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const status = document.getElementById('status');
+            const currentStep = document.getElementById('currentStep');
+            
+            progressFill.style.width = `${data.progress}%`;
+            progressText.textContent = `${data.progress}%`;
+            status.textContent = data.status;
+            currentStep.textContent = data.current_step;
+            
+            if (data.status === 'completed' || data.status === 'failed') {
+                setTimeout(() => {
+                    document.getElementById('progressContainer').style.display = 'none';
+                    if (eventSource) {
+                        eventSource.close();
+                    }
+                }, 3000);
+            }
+        }
+        
+        function connectWebSocket() {
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                log('WebSocket already connected', 'warning');
+                return;
+            }
+            
+            updateWebSocketStatus('connecting');
+            log('Connecting to WebSocket...', 'info');
+            
+            websocket = new WebSocket('ws://localhost:8002/ws/transformations');
+            
+            websocket.onopen = function(event) {
+                updateWebSocketStatus('connected');
+                log('WebSocket connected successfully', 'success');
+            };
+            
+            websocket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                log(`WebSocket: ${data.message || JSON.stringify(data)}`, 'info');
+            };
+            
+            websocket.onclose = function(event) {
+                updateWebSocketStatus('disconnected');
+                log('WebSocket disconnected', 'warning');
+            };
+            
+            websocket.onerror = function(error) {
+                updateWebSocketStatus('disconnected');
+                log('WebSocket error', 'error');
+            };
+        }
+        
+        function disconnectWebSocket() {
+            if (websocket) {
+                websocket.close();
+                websocket = null;
+            }
+        }
+        
+        async function refreshActive() {
+            try {
+                const response = await fetch('http://localhost:8002/transformations/active');
+                const data = await response.json();
+                
+                const container = document.getElementById('activeTransformations');
+                
+                if (data.active_count === 0) {
+                    container.innerHTML = 'No active transformations';
+                } else {
+                    let html = `<h4>Active Transformations (${data.active_count})</h4>`;
+                    data.transformations.forEach(transformation => {
+                        html += `
+                            <div style="background: #f7fafc; padding: 10px; margin: 5px 0; border-radius: 5px;">
+                                <strong>ID:</strong> ${transformation.id}<br>
+                                <strong>Status:</strong> ${transformation.status}<br>
+                                <strong>Progress:</strong> ${transformation.progress}%<br>
+                                <strong>Message:</strong> ${transformation.message}
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                }
+                
+            } catch (error) {
+                log(`Error refreshing active transformations: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-refresh active transformations every 5 seconds
+        setInterval(refreshActive, 5000);
+    </script>
+</body>
+</html> 

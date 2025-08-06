@@ -1,0 +1,163 @@
+networks:
+  dicom-network:
+    driver: bridge
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: dicom-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - dicom-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  api-gateway:
+    build:
+      context: ./
+      dockerfile: ./api-gateway/Dockerfile
+    container_name: dicom-api-gateway
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./api-gateway/logs:/app/logs
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - ENVIRONMENT=production
+    networks:
+      - dicom-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      status-service:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  validator-service:
+    build:
+      context: ./
+      dockerfile: ./validator-service/Dockerfile
+    container_name: dicom-validator
+    volumes:
+      - ./uploads:/app/uploads
+      - ./validator-service/logs:/app/logs
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - STATUS_SERVICE_URL=http://status-service:8003
+      - ENVIRONMENT=production
+    networks:
+      - dicom-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      status-service:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "python.*main.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  descriptor-service:
+    build:
+      context: ./
+      dockerfile: ./descriptor-service/Dockerfile
+    container_name: dicom-descriptor
+    volumes:
+      - ./uploads:/app/uploads
+      - ./archive:/app/archive
+      - ./descriptor-service/logs:/app/logs
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - STATUS_SERVICE_URL=http://status-service:8003
+      - ENVIRONMENT=production
+    networks:
+      - dicom-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      status-service:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "python.*main.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  status-service:
+    build:
+      context: ./
+      dockerfile: ./status-service/Dockerfile
+    container_name: dicom-status-service
+    ports:
+      - "8003:8003"
+    volumes:
+      - ./status-service/logs:/app/logs
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - ENVIRONMENT=production
+    networks:
+      - dicom-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  storage-service:
+    build:
+      context: ./
+      dockerfile: ./storage-service/Dockerfile
+    container_name: dicom-storage
+    volumes:
+      - ./uploads:/app/uploads
+      - ./archive:/app/archive
+      - ./storage-service/logs:/app/logs
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - STATUS_SERVICE_URL=http://status-service:8003
+      - UPLOADS_PATH=/app/uploads
+      - ARCHIVE_PATH=/app/archive
+      - ENVIRONMENT=production
+    networks:
+      - dicom-network
+    depends_on:
+      redis:
+        condition: service_healthy
+      status-service:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "python.*main.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  redis_data:
+    driver: local 

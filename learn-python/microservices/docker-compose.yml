@@ -1,0 +1,194 @@
+version: '3.8'
+
+services:
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - EVENT_BUS_URL=http://event-bus:8001
+      - IMAGE_SERVICE_URL=http://image-service:8002
+      - USER_SERVICE_URL=http://user-service:8003
+      - AUTH_SERVICE_URL=http://auth-service:8004
+    depends_on:
+      - redis
+      - event-bus
+    networks:
+      - microservices-network
+    volumes:
+      - ./api-gateway/logs:/app/logs
+    restart: unless-stopped
+
+  # Event Bus
+  event-bus:
+    build:
+      context: .
+      dockerfile: event-bus/Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - LOG_LEVEL=INFO
+    depends_on:
+      - redis
+    networks:
+      - microservices-network
+    volumes:
+      - ./event-bus/logs:/app/logs
+    restart: unless-stopped
+
+  # Image Processing Service
+  image-service:
+    build:
+      context: .
+      dockerfile: image-service/Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/image_processor
+      - EVENT_BUS_URL=http://event-bus:8001
+      - LOG_LEVEL=INFO
+    depends_on:
+      - redis
+      - postgres
+      - event-bus
+    networks:
+      - microservices-network
+    volumes:
+      - ./image-service/uploads:/app/uploads
+      - ./image-service/output:/app/output
+      - ./image-service/logs:/app/logs
+    restart: unless-stopped
+
+  # User Service
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/image_processor
+      - EVENT_BUS_URL=http://event-bus:8001
+      - LOG_LEVEL=INFO
+    depends_on:
+      - redis
+      - postgres
+      - event-bus
+    networks:
+      - microservices-network
+    volumes:
+      - ./user-service/logs:/app/logs
+    restart: unless-stopped
+
+  # Authentication Service
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    ports:
+      - "8004:8004"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/image_processor
+      - EVENT_BUS_URL=http://event-bus:8001
+      - SECRET_KEY=your-super-secret-key-change-in-production
+      - LOG_LEVEL=INFO
+    depends_on:
+      - redis
+      - postgres
+      - event-bus
+    networks:
+      - microservices-network
+    volumes:
+      - ./auth-service/logs:/app/logs
+    restart: unless-stopped
+
+  # Notification Service
+  notification-service:
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
+    ports:
+      - "8005:8005"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - EVENT_BUS_URL=http://event-bus:8001
+      - LOG_LEVEL=INFO
+    depends_on:
+      - redis
+      - event-bus
+    networks:
+      - microservices-network
+    volumes:
+      - ./notification-service/logs:/app/logs
+    restart: unless-stopped
+
+  # Redis (Pub/Sub + Cache)
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB=image_processor
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # Redis Commander (Web UI for Redis)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # pgAdmin (Web UI for PostgreSQL)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    ports:
+      - "8082:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    depends_on:
+      - postgres
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  postgres_data:
+
+networks:
+  microservices-network:
+    driver: bridge

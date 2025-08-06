@@ -1,29 +1,18 @@
-# Project: JORGE EDUARDO ARDILA Portafolio
+# GEMINI
 
-## General Instructions
++ When running Python tools prefer to use `python3` instead of `python` unless otherwise specified.
++ When running Python tools, prefer to use ivs where possible.
++ When installing Python packages, prefer to use `uv` and endure you are installing to a virtual environment.
+## Mandatory Tooling
+To ensure Python code adheres to required standards, the following commands **must** be run before creating or modifying any 
+`.py` files.  These commands will automatically fix many common issues and flag any that require manual intervention. T
+he commands must be run from the root of the project:
 
-- Adhere strictly to Object Oriented Programming
-- Always use dependency injection
-- Always use Event Driven Architecture
-- Always use Microservices.
-- Do not write Monoliths.
-- DRY
-- !YAGNI
-- Split code in modules, mainly classes.
-- For Docker always use `docker compose`. Do not use `docker-compose`.
-- All new classes, methods and functions should have JSDoc comments.
-
-## Coding Style
-
-- Private class members should be prefixed with one underscore `_`.
-- Use 2 spaces for indentation.
-- Class names should be camelCase.
-- Class files should be named same as Class but first character must be lowercase.
-- Always use up to date Language API's. 
-- Do not use deprecated or soon to be deprecated methods, functions, models, paradigms, libraries, frameworks.
-- In python use DUNDER.
-- Code must be compatible with latest LTS versions of Python, Node.js, Express.js, C++, YAML.
-- Type all python code.
-- Use try catches in Javascript and node.
-
-
+1.  **Check and fix linting issues:**
+```bash
+uvx ruff@latest check --fix .
+```
+2.  **Format the code:**
+```bash
+uvx ruff@latest format .
+```
