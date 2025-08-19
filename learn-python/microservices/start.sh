@@ -27,7 +27,7 @@ mkdir -p output
 
 # Build and start services
 echo "🔨 Building and starting services..."
-docker-compose up -d --build
+docker compose up -d --build
 
 # Wait for services to be ready
 echo "⏳ Waiting for services to be ready..."
@@ -70,10 +70,10 @@ echo "  • Redis Commander:    http://localhost:8081"
 echo "  • pgAdmin:           http://localhost:8082 (admin@example.com / admin)"
 echo ""
 echo "🔍 Useful Commands:"
-echo "  • View logs:         docker-compose logs -f"
-echo "  • Stop services:     docker-compose down"
-echo "  • Restart services:  docker-compose restart"
-echo "  • Check status:      docker-compose ps"
+echo "  • View logs:         docker compose logs -f"
+echo "  • Stop services:     docker compose down"
+echo "  • Restart services:  docker compose restart"
+echo "  • Check status:      docker compose ps"
 echo ""
 echo "📝 Sample API Calls:"
 echo "  • Health check:      curl http://localhost:8000/health"
