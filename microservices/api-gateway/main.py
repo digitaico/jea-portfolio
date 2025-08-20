@@ -1,41 +1,44 @@
-import os
+from fastapi import FastAPI, APIRouter
 import httpx
-from fastapi import FastAPI, Request, HTTPException
+from starlette.responses import JSONResponse
 
 app = FastAPI(title="API Gateway", version="1.0.0")
+api_router = APIRouter()
 
-# Service URLs from environment variables, provided by docker-compose.
-PRODUCTS_SERVICE_URL = os.getenv("PRODUCTS_SERVICE_URL")
+# async HTTP client to make requests to other services in docker network
+client = httpx.AsyncClient()
 
-@app.get("/")
-async def root():
-    return {"message": "Welcome to the API Gateway"}
+@api_router.get("/")
+async def welcome():
+    return {"message": "Bienvenido al API Gateway - JEA"}
 
-@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-async def route_request(path: str, request: Request):
+@api_router.get("/orders")
+async def get_orders_service_status():
     """
-    Routes incoming requests to the correct microservice based on the path.
-    This is a basic, generic routing function.
+    Manda un request al servicio orders.
     """
-    async with httpx.AsyncClient() as client:
-        # Determine the target service based on the path prefix
-        if path.startswith("products"):
-            target_url = f"{PRODUCTS_SERVICE_URL}/{path}"
-        else:
-            raise HTTPException(status_code=404, detail="Path not found in any service")
-        
-        # Forward the request to the target service
-        try:
-            response = await client.request(
-                method=request.method,
-                url=target_url,
-                headers=request.headers,
-                data=await request.body()
-            )
-            response.raise_for_status() # Raise exception for 4xx or 5xx status codes
-            
-            return response.json()
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
-        except httpx.RequestError as e:
-            raise HTTPException(status_code=503, detail=f"Service unavailable: {e}")
+    try:
+        response = await client.get("http://orders:8002")
+        return JSONResponse(content=response.json(), satatus_code=response.status_code)
+    except httpx.ConnectError:
+        return JSONResponse(
+            content={"error": "Servicio 'Orders' no esta disponible."},
+            status_code=503
+        )
+
+@api_router.get("/products")
+async def get_products_service_status():
+    """
+    Manda un request al servicio products.
+    """
+    try:
+        response = await client.get("http://products:8001")
+        return JSONResponse(content=response.json(), status_code=response.status_code)
+    except httpx.ConnectError:
+        return JSONResponse(
+            content={"error": "Servicio 'Products' no esta disponible."},
+            status_code=503
+        )
+
+# Agregar router a la aplicacion principal
+app.include_router(api_router)
