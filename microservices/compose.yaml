@@ -10,53 +10,53 @@ services:
       - microservices-net
 
   api-gateway:
-    build: ./api-gateway
+    build: 
+      context: ./api-gateway
+      dockerfile: Dockerfile
     container_name: api-gateway
     ports:
       - "8000:8000"
     volumes:
       - ./api-gateway:/app
     environment:
-      - PRODUCTS_SERVICE_URL=http://products-service:8001
+      - PRODUCTS_SERVICE_URL=http://products:8001
     depends_on:
-      - products-service
+      - products
     networks:
       - microservices-net
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   products:
-    build: ./products-service
-    container_name: products-service
-    ports:
-      - "8001:8001"
+    build: 
+      context: ./products
+      dockerfile: Dockerfile
+    container_name: products
     volumes:
-      - ./products-service:/app
+      - ./products:/app
     environment:
       - NATS_URL=nats://nats:4222
     depends_on:
       - nats
     networks:
       - microservices-net
-    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 
   orders:
-    build: ./orders-service
-    container_name: orders-service
-    ports:
-      - "8002:8002"
+    build: 
+      context: ./orders
+      dockerfile: Dockerfile
+    container_name: orders
     volumes:
-      - ./orders-service:/app
+      - ./orders:/app
     environment:
       - NATS_URL=nats://nats:4222
     depends_on:
       - nats
     networks:
       - microservices-net
-    command: uvicorn main:app --host 0.0.0.0 --port 8002 --reload
 
-  networks:
-    microservices-net:
-      driver: bridge
+networks:
+  microservices-net:
+    driver: bridge
 
 
 
