@@ -19,7 +19,7 @@ async def get_orders_service_status():
     """
     try:
         response = await client.get("http://orders:8002")
-        return JSONResponse(content=response.json(), satatus_code=response.status_code)
+        return JSONResponse(content=response.json(), status_code=response.status_code)
     except httpx.ConnectError:
         return JSONResponse(
             content={"error": "Servicio 'Orders' no esta disponible."},

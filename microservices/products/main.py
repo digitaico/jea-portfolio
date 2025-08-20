@@ -1,4 +1,4 @@
-from fastapo import FastAPI
+from fastapi import FastAPI
 
 app = FastAPI(title="Products Service API", version="1.0.0")
 
@@ -13,6 +13,6 @@ async def list_products():
         {"id": 2, "name": "Product 2", "price": 19.99},
         {"id": 3, "name": "Product 3", "price": 29.99},
         {"id": 4, "name": "Product 4", "price": 39.99},
-        {"id": 5, "name": "Product 5", "price": 49.99 
+        {"id": 5, "name": "Product 5", "price": 49.99} 
     ]
     return {"products": products}
