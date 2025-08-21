@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Request, HTTPException
 import httpx
 from starlette.responses import JSONResponse
 
@@ -12,19 +12,43 @@ client = httpx.AsyncClient()
 async def welcome():
     return {"message": "Bienvenido al API Gateway - JEA"}
 
-@api_router.get("/orders")
-async def get_orders_service_status():
+@api_router.get("/orders/list")
+async def get_orders_list():
     """
     Manda un request al servicio orders.
     """
     try:
-        response = await client.get("http://orders:8002")
+        response = await client.get("http://orders:8001/get-orders")
         return JSONResponse(content=response.json(), status_code=response.status_code)
     except httpx.ConnectError:
-        return JSONResponse(
-            content={"error": "Servicio 'Orders' no esta disponible."},
+        raise HTTPException(
+            status_code=503,
+            detail={"error": "Servicio 'Orders' no esta disponible."}
+        )
+
+@api_router.post("/orders/create")
+async def create_order_endpoint(request: Request):
+    """
+    Acepta POST request y redirije un payload JSON al servicio orders.
+    """
+    try:
+        # lee JSON body del request
+        payload = await request.json()
+        # manda el payload al servicio orders
+        response = await client.post("http://orders:8001/create-order", json=payload)
+        return JSONResponse(content=response.json(), status_code=response.status_code)
+    except httpx.ConnectError:
+        raise HTTPException(
+            detail={"error": "Servicio 'Orders' no esta disponible."},
             status_code=503
         )
+    # caso en que body no es JSON valido
+    except Exception as e:
+        raise HTTPException(
+            detail={"error": f"Peticion invalida, body no conforme: {e}"},
+            status_code=400
+        )
+
 
 @api_router.get("/products")
 async def get_products_service_status():
@@ -32,11 +56,11 @@ async def get_products_service_status():
     Manda un request al servicio products.
     """
     try:
-        response = await client.get("http://products:8001")
+        response = await client.get("http://products:8002")
         return JSONResponse(content=response.json(), status_code=response.status_code)
     except httpx.ConnectError:
-        return JSONResponse(
-            content={"error": "Servicio 'Products' no esta disponible."},
+        raise HTTPException(
+            detail={"error": "Servicio 'Products' no esta disponible."},
             status_code=503
         )
 

@@ -1,6 +1,29 @@
 services:
+  
+  db_1:
+    image: public.ecr.aws/docker/library/postgres:17-alpine
+    shm_size: 128mb
+    restart: always
+    ports:
+      - "5433:5432" # PostgreSQL port
+    container_name: db_1
+    environment:
+      POSTGRES_USER : user
+      POSTGRES_PASSWORD : password
+      POSTGRES_DB : orders_db
+    volumes:
+      - orders_data:/var/lib/postgresql/data
+    networks:
+      - microservices-net 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   nats:
-    image: nats:2.9.20-alpine
+    image: public.ecr.aws/docker/library/nats:2.9.20-alpine
     container_name: nats-server
     ports:
       - "4222:4222" # nats client port
@@ -13,18 +36,13 @@ services:
     build: 
       context: ./api-gateway
       dockerfile: Dockerfile
-    container_name: api-gateway
     ports:
       - "8000:8000"
-    volumes:
-      - ./api-gateway:/app
-    environment:
-      - PRODUCTS_SERVICE_URL=http://products:8001
-    depends_on:
-      - products
+    container_name: api-gateway
+    expose:
+      - "8000"
     networks:
       - microservices-net
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   products:
     build: 
@@ -33,10 +51,6 @@ services:
     container_name: products
     volumes:
       - ./products:/app
-    environment:
-      - NATS_URL=nats://nats:4222
-    depends_on:
-      - nats
     networks:
       - microservices-net
 
@@ -45,18 +59,18 @@ services:
       context: ./orders
       dockerfile: Dockerfile
     container_name: orders
-    volumes:
-      - ./orders:/app
     environment:
-      - NATS_URL=nats://nats:4222
+      DATABASE_URL : postgresql://user:password@db_1:5432/orders_db
     depends_on:
-      - nats
+      - db_1
     networks:
       - microservices-net
+    command: uvicorn main:app --host 0.0.0.0 --port 8001
+
 
 networks:
   microservices-net:
     driver: bridge
 
-
-
+volumes:
+  orders_data:
