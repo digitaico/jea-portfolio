@@ -63,6 +63,29 @@ async def create_order_endpoint(request: Request):
             status_code=400
         )
 
+@api_router.post("/notifications/send")
+async def send_notification(request: Request):
+    """
+    Acepta POST request y redirije un payload JSON al servicio notifications.
+    """
+    try:
+        # lee JSON body del request
+        payload = await request.json()
+        # manda el payload al servicio notifications
+        response = await client.post("http://notifications:8003/send-notification", json=payload)
+        return JSONResponse(content=response.json(), status_code=response.status_code)
+    except httpx.ConnectError:
+        raise HTTPException(
+            detail={"error": "Servicio 'Notifications' no esta disponible."},
+            status_code=503
+        )
+    # caso en que body no es JSON valido
+    except Exception as e:
+        raise HTTPException(
+            detail={"error": f"Peticion invalida, body no conforme: {e}"},
+            status_code=400
+        )   
+        
 
 @api_router.get("/products")
 async def get_products_service_status():

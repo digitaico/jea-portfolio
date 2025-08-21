@@ -32,6 +32,19 @@ services:
     networks:
       - microservices-net
 
+  notifications:
+    build: 
+      context: ./notifications
+      dockerfile: Dockerfile
+    container_name: notifications
+    environment:
+      NATS_URL : nats://nats-server:4222
+    depends_on:
+      - nats
+    networks:
+      - microservices-net
+    command: uvicorn main:app --host 0.0.0.0 --port 8003
+
   api-gateway:
     build: 
       context: ./api-gateway
