@@ -25,6 +25,20 @@ async def get_orders_list():
             status_code=503,
             detail={"error": "Servicio 'Orders' no esta disponible."}
         )
+@api_router.get("/orders/{order_id}")
+async def get_order_by_id(order_id: int):
+    """
+    Manda un request al servicio orders para recibir data de orden especifica.
+    """
+    try:
+        response = await client.get(f"http://orders:8001/get-orders/{order_id}")
+        return JSONResponse(content=response.json(), status_code=response.status_code)
+    except httpx.ConnectError:
+        raise HTTPException(
+            status_code=503,
+            detail={"error": "Servicio 'Orders' no esta disponible."}
+        )   
+
 
 @api_router.post("/orders/create")
 async def create_order_endpoint(request: Request):

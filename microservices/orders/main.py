@@ -61,6 +61,13 @@ async def get_orders(db: Session = Depends(get_db)):
     orders = db.query(Order).all()
     return orders
 
+@app.get("/get-orders/{order_id}", response_model=OrderResponse)
+async def get_orders_by_id(order_id: int, db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return order
+
 @app.post("/create-order", response_model=OrderResponse)
 async def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     db_order = Order(
