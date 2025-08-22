@@ -11,6 +11,9 @@ services:
       POSTGRES_USER : user
       POSTGRES_PASSWORD : password
       POSTGRES_DB : orders_db
+      NATS_URL : nats://nats-server:4222
+    depends_on:
+      - nats
     volumes:
       - orders_data:/var/lib/postgresql/data
     networks:
@@ -41,6 +44,8 @@ services:
       NATS_URL : nats://nats-server:4222
     depends_on:
       - nats
+    volumes:
+      - ./events:/app/events
     networks:
       - microservices-net
     command: uvicorn main:app --host 0.0.0.0 --port 8003
@@ -52,6 +57,12 @@ services:
     ports:
       - "8000:8000"
     container_name: api-gateway
+    environment:
+      NATS_URL : nats://nats-server:4222
+    volumes:
+      - ./events:/app/events
+    depends_on:
+      - nats
     expose:
       - "8000"
     networks:
@@ -62,8 +73,12 @@ services:
       context: ./products
       dockerfile: Dockerfile
     container_name: products
+    environment:
+      NATS_URL : nats://nats-server:4222
+    depends_on:
+      - nats
     volumes:
-      - ./products:/app
+      - ./events:/app/events
     networks:
       - microservices-net
 
@@ -73,9 +88,11 @@ services:
       dockerfile: Dockerfile
     container_name: orders
     environment:
-      DATABASE_URL : postgresql://user:password@db_1:5432/orders_db
+      NATS_URL : nats://nats-server:4222
     depends_on:
-      - db_1
+      - nats
+    volumes:
+      - ./events:/app/events
     networks:
       - microservices-net
     command: uvicorn main:app --host 0.0.0.0 --port 8001

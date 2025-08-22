@@ -1,9 +1,17 @@
+from events.nats_client import EventBus
+from events.events_store import EventStore
+import asyncio
+import json
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
 from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 import os
+
+
+event_bus = EventBus()
+event_store = EventStore()
 
 app = FastAPI(Title="Orders Service", description="Service for managing orders", version="1.0.0")
 
@@ -45,10 +53,92 @@ def get_db():
     finally:
         db.close()
 
+
+async def create_db_tables():
+    Base.metadata.create_all(bind=engine)
+
 # Crear las tablas en la base de datos al iniciar aplicación
 @app.on_event("startup")
-def create_db_tables():
-    Base.metadata.create_all(bind=engine)
+async def startup_event():
+    await event_bus.connect()
+    # subscribe to events
+    await event_bus.subscribe("orders", handle_order_event)
+    #  create tables if they do not exist 
+    await create_db_tables()
+
+async def handle_order_event(event_data: dict):
+    print(f"Servicio ordenes recibió evento: {event_data}")
+
+    # Guardar evento en event store
+    await event_store.store_event(event_data)
+
+    if event_data.get("event_type") == "order.created":
+        order_data = event_data.get("data", {})
+        print(f"Procesando orden creada: {order_data}")
+
+        # crear orden en la base de datos
+        db_order = Order(
+            item_id=order_data.get("item_id"),
+            quantity=order_data.get("quantity"),
+            price=order_data.get("price")
+        )
+
+        # Añadir la orden a la base de datos
+        db = next(get_db())
+        db.add(db_order)
+        db.commit()
+        db.refresh(db_order) # Refrescar el objeto para obtener el ID generado
+
+        print(f"Orden {db_order.id} creada en la base de datos.")
+
+        # guardar evento en event store
+        order_created_event = {
+            "event_type": "order.created",
+            "correlation_id": event_data.get("correlation_id"),
+            "data": {
+                "order_id": db_order.id,
+                "item_id": db_order.item_id,
+                "quantity": db_order.quantity,
+                "price": db_order.price,
+                "status": "created"
+            }
+        }
+
+        await event_store.store_event(order_created_event)
+
+        # publicar eventos para otros servicios
+        await event_bus.publish("inventory", {
+            "event_type": "inventory.reserved",
+            "correlation_id": event_data.get("correlation_id"),
+            "data": {
+                "item_id": db_order.item_id,
+                "quantity": db_order.quantity,
+                "order_id": db_order.id
+            }        
+        })
+
+
+    await event_bus.publish("inventory", {
+        "event_type": "inventory.reserved",
+        "correlation_id": event_data.get("correlation_id"),
+        "data": {
+            "item_id": order.item_id,
+            "quantity": order.quantity,
+            "order_id": order.id
+        }
+    })
+
+    await event_bus.publish("notifications", {
+        "event_type": "order.confirmation",
+        "correlation_id": event_data.get("correlation_id"),
+        "data": {
+            "order_id": order.id,
+            "item_id": order.item_id,
+            "quantity": order.quantity,
+            "status": "created"
+        }
+    })
+
 
 # --- Endpoints --- 
 @app.get("/")

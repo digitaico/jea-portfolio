@@ -1,12 +1,26 @@
+from events.schemas import OrderCreatedEvent, NotificationSentEvent
+from events.nats_client import EventBus
+from events.events_store import EventStore
+import asyncio
+import uuid
 from fastapi import FastAPI, APIRouter, Request, HTTPException
-import httpx
 from starlette.responses import JSONResponse
+
+event_bus = EventBus() 
+event_store = EventStore()
 
 app = FastAPI(title="API Gateway", version="1.0.0")
 api_router = APIRouter()
 
-# async HTTP client to make requests to other services in docker network
-client = httpx.AsyncClient()
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Inicializa el cliente HTTP y el EventBus al iniciar la aplicacion.
+    """
+    await event_bus.connect()
+    print("EventBus conectado exitosamente.")
+    print("EventStore inicializando.")
 
 @api_router.get("/")
 async def welcome():
@@ -17,27 +31,15 @@ async def get_orders_list():
     """
     Manda un request al servicio orders.
     """
-    try:
-        response = await client.get("http://orders:8001/get-orders")
-        return JSONResponse(content=response.json(), status_code=response.status_code)
-    except httpx.ConnectError:
-        raise HTTPException(
-            status_code=503,
-            detail={"error": "Servicio 'Orders' no esta disponible."}
-        )
+    return {"message": "Endpoint de orders list", "status": "ok"}
+
+
 @api_router.get("/orders/{order_id}")
 async def get_order_by_id(order_id: int):
     """
     Manda un request al servicio orders para recibir data de orden especifica.
     """
-    try:
-        response = await client.get(f"http://orders:8001/get-orders/{order_id}")
-        return JSONResponse(content=response.json(), status_code=response.status_code)
-    except httpx.ConnectError:
-        raise HTTPException(
-            status_code=503,
-            detail={"error": "Servicio 'Orders' no esta disponible."}
-        )   
+    return {"message": f"Order {order_id} disponible via events. Buscar en eventos"}
 
 
 @api_router.post("/orders/create")
@@ -49,78 +51,29 @@ async def create_order_endpoint(request: Request):
     try:
         # 1. lee JSON body del request
         payload = await request.json()
-    except json.JSONDecodeError as e:
-        raise HTTPException(
-            detail={"error": f"Peticion invalida, JSON no conforme: {e}"},
-            status_code=400
-        )
-    except Exception as e:
-        raise HTTPException(
-            detail={"error": f"Peticion invalida: {e}"},
-            status_code=400
-        )
-
-    # 2. manda payload al servicio orders
-    try:
-        order_service_response = await client.post("http://orders:8001/create-order", json=payload)
-    except httpx.ConnectError:
-        raise HTTPException(
-            detail={"error": "Servicio 'Notifications' no esta disponible."},
-            status_code=503
-        )
-
-    #3. si hubo error creando la orden, retorna error sin mandar notificacion
-    if order_service_response.status_code != 200:
-        try:
-            return JSONResponse(
-                content=order_service_response.json(), 
-                status_code=order_service_response.status_code
-            )
-        except json.JSONDecodeError:
-            return JSONResponse(
-                content={"error": "Error desconocido non-JSON del servicio Orders."}, 
-                status_code=order_service_response.status_code
-            )
-
-    #4. si la orden fue creada exitosamente, manda notificacion
-    try:
-        order_data = order_service_response.json()
-
-        if not isinstance(order_data, dict):
-            print("ERROR CRITICO: Respuesta 200 pero no contiene data de orden.")
-            raise TypeError("Orders retorno una respuesta no Dictionary.")
-
-    except json.JSONDecodeError:
-        print("ERROR CRITICO: Respuesta 200 pero non-JSON del servicio Orders.")
-        raise HTTPException(
-            detail={"error": "Orders retorno una respuesta no JSON."},
-            status_code=500
-        )
-    except TypeError as e:
-            print(f"ERROR CRITICO: {e}")
-            raise HTTPException(
-            detail={"error": f"Orders retorno una respuesta invalida: {e}"},
-            status_code=500
-        )
     
-    # 5. prepara y manda notificacion al servicio notifications
-    try:
-        notification_payload = {
-            "message": f"Orden {order_data.get('id', 'N/A')} creada exitosamente."
+        event = OrderCreatedEvent(
+            correlation_id=request.headers.get("X-Correlation-ID", str(uuid.uuid4())),
+            data=payload
+        )
+
+        # Store event
+        event_id = await event_store.store_event(event.dict())
+        # publica evento a NATS solo si la orden fue creada exitosamente
+        await event_bus.publish("orders", event)
+
+        # return inmediate response, no waiting for HTTP
+        return {
+            "status": "accepted",
+            "event_id": event_id,
+            "correlation_id": event.correlation_id,
+            "message": "Orden creada exitosamente, evento publicado."
         }
-        # manda notificacion al servicio notifications
-        notification_response = await client.post("http://notifications:8003/send-notification/", json=notification_payload)
-
-        if notification_response.status_code != 200:
-            print(f"Error al enviar notificacion: {notification_response.status_code} {notification_response.text}")
-
-    except httpx.ConnectError:
-        print("Servicio 'Notifications' no esta disponible para enviar notificacion.")
     except Exception as e:
-        print(f"Error inesperado al enviar notificacion: {e}")
-    
-    # 6. retorna la data de la orden creada
-    return JSONResponse(content=order_data, status_code=order_service_response.status_code)
+        raise HTTPException(
+            detail={"error": f"Fallo al crear orden: {e}"},
+            status_code=400
+        )
 
 
 @api_router.post("/notifications/send-notification/")
@@ -132,19 +85,26 @@ async def send_notification(request: Request):
         # lee JSON body del request
         payload = await request.json()
         # manda el payload al servicio notifications
-        response = await client.post("http://notifications:8003/send-notification", json=payload)
-        return JSONResponse(content=response.json(), status_code=response.status_code)
-    except httpx.ConnectError:
+        notification_event = {
+            "event_type": "notification.requested",
+            "correlation_id": request.headers.get("X-Correlation-ID", str(uuid.uuid4())),
+            "data": payload 
+        }
+
+        event:id = await event_store.store_event(notification_event)
+        await event_bus.publish("notifications", notification_event)
+
+        return {
+            "status": "accepted",
+            "event_id": event_id,
+            "correlation_id": notification_event["correlation_id"],
+        }
+
+    except Exception as e: 
         raise HTTPException(
-            detail={"error": "Servicio 'Notifications' no esta disponible."},
-            status_code=503
-        )
-    # caso en que body no es JSON valido
-    except Exception as e:
-        raise HTTPException(
-            detail={"error": f"Peticion invalida, body no conforme: {e}"},
+            detail={"error": f"Fallo al enviar notificacion: {e}"},
             status_code=400
-        )   
+        )
         
 
 @api_router.get("/products")
@@ -152,14 +112,34 @@ async def get_products_service_status():
     """
     Manda un request al servicio products.
     """
-    try:
-        response = await client.get("http://products:8002")
-        return JSONResponse(content=response.json(), status_code=response.status_code)
-    except httpx.ConnectError:
-        raise HTTPException(
-            detail={"error": "Servicio 'Products' no esta disponible."},
-            status_code=503
-        )
+    return {"message": "Data de Productos disponible via eventos. Use eventos para consultar"} 
+
+
+
+# --. Events endpoints --- 
+@api_router.get("/events")
+async def get_all_events():
+    """
+    Endpoint para obtener todos los eventos almacenados.
+    """
+    events = await event_store.get_all_events()
+    return {"events": events, "total": len(events)}
+
+@api_router.get("/events/{event_type}")
+async def get_events_by_type(event_type: str):
+    """
+    Endpoint para obtener eventos por tipo.
+    """
+    events = await event_store.get_events_by_type(event_type)
+    return {"events": events, "total": len(events)}
+
+@api_router.get("/events/correlation/{correlation_id}")
+async def get_events_by_correlation_id(correlation_id: str):
+    """
+    Endpoint para obtener eventos por correlation_id.
+    """
+    events = await event_store.get_events_by_correlation_id(correlation_id)
+    return {"events": events, "total": len(events)}
 
 # Agregar router a la aplicacion principal
 app.include_router(api_router)
