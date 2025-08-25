@@ -11,6 +11,7 @@
 | Color Switching | Python | OpenCV, Threshold, Masks | 2025-07-1|
 | Running Metrics | Python | Machine Learning, MediaPipe, Pose Estimation, Sports | 2025-06-10 |
 | GraphQL PostgreSQL | Python | GraphQL, PostgreSQL, FastAPI, DevOps | 2025-07-20 |
+| EDA Microservices | Backend | FastAPI, PostgreSQL, Python | 2025-08-10 | 
 
 
 
