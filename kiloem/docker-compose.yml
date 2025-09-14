@@ -1,0 +1,143 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: public.ecr.aws/docker/library/nginx:1.25-alpine
+    container_name: kiloem-nginx-gateway
+    ports:
+      - "86:80"  # Only NGINX exposed publicly (low probability port)
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - appointment-service
+    networks:
+      - healthcare-net
+
+  postgres:
+    image: public.ecr.aws/docker/library/postgres:15-alpine
+    container_name: kiloem-postgres
+    environment:
+      POSTGRES_DB: healthcare_db
+      POSTGRES_USER: healthcare_user
+      POSTGRES_PASSWORD: healthcare_pass
+    expose:
+      - "5432"  # Only internal access
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - healthcare-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U healthcare_user -d healthcare_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  nats:
+    image: public.ecr.aws/docker/library/nats:2.10.14-alpine
+    container_name: kiloem-nats-server
+    expose:
+      - "4222"  # Only internal access
+      - "8222"  # Only internal access
+    command: -DV -js
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - healthcare-net
+
+  appointment-service:
+    build:
+      context: ./appointment-service
+      dockerfile: Dockerfile
+    container_name: kiloem-appointment-service
+    environment:
+      NATS_URL: nats://kiloem-nats-server:4222
+      DATABASE_URL: postgresql://healthcare_user:healthcare_pass@kiloem-postgres:5432/healthcare_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - healthcare-net
+    expose:
+      - "8010"  # Internal only - accessed via NGINX
+
+  notifications-service:
+    build:
+      context: ./notifications-service
+      dockerfile: Dockerfile
+    container_name: kiloem-notifications-service
+    environment:
+      NATS_URL: nats://kiloem-nats-server:4222
+      DATABASE_URL: postgresql://healthcare_user:healthcare_pass@kiloem-postgres:5432/healthcare_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - healthcare-net
+    expose:
+      - "8011"  # Internal only - accessed via NGINX
+
+  patient-service:
+    build:
+      context: ./patient-service
+      dockerfile: Dockerfile
+    container_name: kiloem-patient-service
+    environment:
+      NATS_URL: nats://kiloem-nats-server:4222
+      DATABASE_URL: postgresql://healthcare_user:healthcare_pass@kiloem-postgres:5432/healthcare_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - healthcare-net
+    expose:
+      - "8012"  # Internal only - accessed via NGINX
+
+  doctor-service:
+    build:
+      context: ./doctor-service
+      dockerfile: Dockerfile
+    container_name: kiloem-doctor-service
+    environment:
+      NATS_URL: nats://kiloem-nats-server:4222
+      DATABASE_URL: postgresql://healthcare_user:healthcare_pass@kiloem-postgres:5432/healthcare_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - healthcare-net
+    expose:
+      - "8013"  # Internal only - accessed via NGINX
+
+  event-store-service:
+    build:
+      context: ./event-store-service
+      dockerfile: Dockerfile
+    container_name: kiloem-event-store-service
+    environment:
+      NATS_URL: nats://kiloem-nats-server:4222
+      DATABASE_URL: postgresql://healthcare_user:healthcare_pass@kiloem-postgres:5432/healthcare_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    networks:
+      - healthcare-net
+    expose:
+      - "8014"  # Internal only - accessed via NGINX
+
+networks:
+  healthcare-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
