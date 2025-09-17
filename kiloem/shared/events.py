@@ -131,6 +131,76 @@ def create_notification_event(event_type: str, notification_data: dict) -> Notif
     event_class = event_classes.get(event_type, NotificationEvent)
     return event_class(event_type=event_type, **notification_data)
 
+# Command Events
+class AppointmentCreateCommand(BaseEvent):
+    """Command to create appointment"""
+    event_type: str = "appointment.create.command"
+    patient_id: str
+    doctor_id: str
+    appointment_time: datetime
+    duration_minutes: int = 30
+    notes: Optional[str] = None
+
+class AppointmentUpdateCommand(BaseEvent):
+    """Command to update appointment"""
+    event_type: str = "appointment.update.command"
+    appointment_id: str
+    appointment_time: Optional[datetime] = None
+    duration_minutes: Optional[int] = None
+    status: Optional[str] = None
+    notes: Optional[str] = None
+
+class AppointmentCancelCommand(BaseEvent):
+    """Command to cancel appointment"""
+    event_type: str = "appointment.cancel.command"
+    appointment_id: str
+
+class AppointmentGetCommand(BaseEvent):
+    """Command to get appointment"""
+    event_type: str = "appointment.get.command"
+    appointment_id: str
+
+class AppointmentListCommand(BaseEvent):
+    """Command to list appointments"""
+    event_type: str = "appointment.list.command"
+    patient_id: Optional[str] = None
+    doctor_id: Optional[str] = None
+
+# Response Events
+class AppointmentResponse(BaseEvent):
+    """Response for appointment operations"""
+    appointment_id: str
+    patient_id: str
+    doctor_id: str
+    appointment_time: datetime
+    duration_minutes: int
+    status: str
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+class AppointmentCreatedResponse(AppointmentResponse):
+    """Response for appointment creation"""
+    event_type: str = "appointment.created.response"
+
+class AppointmentUpdatedResponse(AppointmentResponse):
+    """Response for appointment update"""
+    event_type: str = "appointment.updated.response"
+
+class AppointmentCancelledResponse(BaseEvent):
+    """Response for appointment cancellation"""
+    event_type: str = "appointment.cancelled.response"
+    appointment_id: str
+
+class AppointmentDataResponse(AppointmentResponse):
+    """Response with appointment data"""
+    event_type: str = "appointment.data.response"
+
+class AppointmentListResponse(BaseEvent):
+    """Response with list of appointments"""
+    event_type: str = "appointment.list.response"
+    appointments: list
+
 # Event subject patterns
 class EventSubjects:
     """Standard event subject patterns"""
@@ -144,6 +214,20 @@ class EventSubjects:
     NOTIFICATION_SENT = "notification.sent"
 
     DOCTOR_AVAILABILITY = "doctor.availability.updated"
+
+    # Command subjects
+    APPOINTMENT_CREATE_COMMAND = "appointment.create.command"
+    APPOINTMENT_UPDATE_COMMAND = "appointment.update.command"
+    APPOINTMENT_CANCEL_COMMAND = "appointment.cancel.command"
+    APPOINTMENT_GET_COMMAND = "appointment.get.command"
+    APPOINTMENT_LIST_COMMAND = "appointment.list.command"
+
+    # Response subjects
+    APPOINTMENT_CREATED_RESPONSE = "appointment.created.response"
+    APPOINTMENT_UPDATED_RESPONSE = "appointment.updated.response"
+    APPOINTMENT_CANCELLED_RESPONSE = "appointment.cancelled.response"
+    APPOINTMENT_DATA_RESPONSE = "appointment.data.response"
+    APPOINTMENT_LIST_RESPONSE = "appointment.list.response"
 
     # Wildcard patterns for subscriptions
     ALL_APPOINTMENTS = "appointment.*"

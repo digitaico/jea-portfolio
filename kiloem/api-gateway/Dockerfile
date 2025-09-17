@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/python:3.12-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
@@ -7,5 +7,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# No EXPOSE - internal service only
 CMD ["python", "main.py"]

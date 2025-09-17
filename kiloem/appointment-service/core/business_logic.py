@@ -7,11 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, and_, or_
 from typing import List, Optional
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from ..models.appointment import Appointment, AppointmentCreate, AppointmentUpdate, AppointmentDB
 from ...shared.database import add_and_commit
 from ...shared.utils import ValidationUtils, TimeUtils
+from ...shared.events import AppointmentCreateCommand, AppointmentUpdateCommand
 
 
 class AppointmentService:
@@ -207,3 +208,24 @@ class AppointmentService:
         }
 
         return new_status in valid_transitions.get(current_status, [])
+
+    async def create_appointment_from_command(self, command: AppointmentCreateCommand) -> Appointment:
+        """Create appointment from command"""
+        appointment_data = AppointmentCreate(
+            patient_id=command.patient_id,
+            doctor_id=command.doctor_id,
+            appointment_time=command.appointment_time,
+            duration_minutes=command.duration_minutes,
+            notes=command.notes
+        )
+        return await self.create_appointment(appointment_data)
+
+    async def update_appointment_from_command(self, command: AppointmentUpdateCommand) -> Optional[Appointment]:
+        """Update appointment from command"""
+        update_data = AppointmentUpdate(
+            appointment_time=command.appointment_time,
+            duration_minutes=command.duration_minutes,
+            status=command.status,
+            notes=command.notes
+        )
+        return await self.update_appointment(command.appointment_id, update_data)
