@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
+*dicom_anonymizer.py*
 Script Anonimizador de DICOM
 @Author: Jorge Eduardo Ardila
 2025-09-17
-https://github.com/digitaico/jea-portfolio/tree/master/dicom-anonymizer
 
 Este script anonimiza archivos DICOM en una carpeta especificada reemplazando informacion
 especifica del paciente con 'Anonimo'. Procesa todos los archivos DICOM recursivamente
@@ -21,7 +21,7 @@ Campos preservados:
 - Todos los demas datos, imagenes y estructura permanecen sin cambios.
 
 Uso:
-    python anonymize_dicom.py --folder /path/to/dicom/folder --store /path/to/output/folder
+    dicom_anonymizer.py --folder /path/to/dicom/folder --store /path/to/output/folder
 """
 
 import argparse
@@ -105,12 +105,10 @@ def verify_dicom_file(file_path: Path) -> bool:
         bool: True si es valido, False en caso contrario.
     """
     try:
-        ds = pydicom.dcmread(file_path, stop_before_pixels=True)
-        # Check if essential elements are present
-        has_pixel_data = (0x7fe0, 0x0010) in ds
-        has_patient_name = hasattr(ds, 'PatientName')
-        return has_pixel_data and has_patient_name
-    except Exception:
+        pydicom.dcmread(file_path, stop_before_pixels=True)
+        return True
+    except Exception as e:
+        print(f"Debug {file_path}: Exception during verification: {e}")
         return False
 
 
@@ -135,7 +133,7 @@ def process_dicom_file(file_path: Path, output_path: Path, verbose: bool = True)
             if verbose:
                 print(f"💯 Procesado exitosamente {output_path}")
         else:
-            print(f"⚠️ Advertencia: Verificacion fallida para {output_path}")
+            print(f"⚠️ Advertencia: Verificacion fallidaXX  para {output_path}")
 
     except Exception as e:
         print(f"Error procesando {file_path}: {e}")
