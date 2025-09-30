@@ -13,6 +13,7 @@
 | GraphQL PostgreSQL | Python | GraphQL, PostgreSQL, FastAPI, DevOps | 2025-07-20 |
 | EDA Microservices | Backend | FastAPI, PostgreSQL, Python | 2025-08-10 |
 | DICOM BULK Anonymizer | Python | DICOM, Medical Images, Data Engineering | 2025-09-17 |
+| Streamlit DataViz | Python | Dataviz, Dashboard, Analytics | 2025-09-30 |
 
 
 
