@@ -1,0 +1,23 @@
+# compose.yaml
+name: 'pg-data-learn'
+
+services:
+
+  db:
+    image: public.ecr.aws/docker/library/postgres:18-alpine
+    container_name: db_pg_data
+    env_file: ./.env
+    ports:
+      - "5442:5432"
+    environment:
+      - TZ='GMT-5'
+      - PGTZ='GMT-5'
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PWD=${POSTGRES_PASSWORD}
+    networks:
+      - pg-network
+
+
+networks:
+  pg-network:
+    driver: bridge
