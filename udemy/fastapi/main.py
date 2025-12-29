@@ -29,6 +29,16 @@ def main():
     else:
         print("Not valid grade")
 
+    days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    x = 0
+    while x < 3:
+        x += 1
+        print("----------")
+        for i in days_of_week:
+            if i == "Monday":
+                continue
+            print(f"dia {i}")
+        
 
 
 main()
