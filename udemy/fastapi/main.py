@@ -8,12 +8,16 @@ def main():
     item_cost = b_item * (1 + tax)
     print(asset - item_cost)
 
+    print("// === // === //")
+    # Lists
     zoo = ['gibon', 'osprey', 'bear', 'jaguar', 'arapaima']
     print(zoo)
     zoo.remove('jaguar')
     print(zoo)
     print(zoo[0:3])
 
+    print("// === // === //")
+    # If else
     grade = 200
 
     if grade <= 59:
@@ -28,7 +32,9 @@ def main():
         print("A")
     else:
         print("Not valid grade")
-
+    
+    print("// === // === //")
+    # Loops
     days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     x = 0
     while x < 3:
@@ -38,7 +44,30 @@ def main():
             if i == "Monday":
                 continue
             print(f"dia {i}")
-        
+    
+    
+    print("// === // === //")
+    # Dicts
+    vehicle = {
+        "model":"Ford",
+        "make":"Explorer",
+        "year":2018,
+        "mileage":40000
+    }
+    # 1. for loop to print all
+    for k,v in vehicle.items():
+        print(f"{k}: {v}")
+    # 2. copy dict
+    vehicle2 = vehicle.copy()
+    # 3. add property to copy
+    vehicle2["number_of_tires"] = 4
+    # 4. delete property from copy
+    vehicle2.pop('mileage')
+
+    print("---- ---- ----")
+    for k in vehicle2:
+        print(k)
+
 
 
 main()
