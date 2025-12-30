@@ -68,6 +68,19 @@ def main():
     for k in vehicle2:
         print(k)
 
+    print("// === // === //")
 
+# functions
+def func():
+    pass
+
+def data(firstname: str, lastname: str, age:int) :
+    dict = {}
+    dict['firstName'] = firstname
+    dict['lastName'] = lastname
+    dict['age'] = age
+
+    return dict
 
 main()
+print(data(firstname='Juan Carlos', lastname='Piedrahita',age=40))
