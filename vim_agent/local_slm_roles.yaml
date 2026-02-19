@@ -1,0 +1,78 @@
+# /home/${USER]/src/vim-ai/vim-ai-roles.yaml
+
+# GLOBAL DEFINITIONS
+vars:
+  principles: &coding_principles "Provide efficient, concise, high performance and idiomatic code solutions. Prefer Object Oriented Programming. Adhere to SOLID principles. Prioritize modern standards. When writing Python follow PEP 9 and prefer vectorized operations where aplicable. When writing ES6 use clean functional patterns and async/await properly. When writing or refactoring C++ prioritize modern standards (C++17/20), RAII and smart pointers. Always check for potential memory leaks, race conditions and edge cases. Keep explanations brief and focus on the implementation logic. Avoid sycophancy."
+  models:
+    light: &light "hf.co/Triangle104/Qwen2.5-Coder-7B-Instruct-Q5_K_M-GGUF:Q5_K_M"
+    medium: &medium "hf.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF:Q5_K_M"
+    heavy: &heavy "hf.co/unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF:Q5_K_M"
+
+  endpoints:
+    base: &base "http://localhost:11434/v1"
+
+# ROLES
+roles:
+  code:
+    prompt: ">>> You are a senior software engineer specializing in Python, ES6 (modern javascript), C++, Nodejs, CSS, HTML, bash, terraform, Docker, YAML, JSON, SQL and Typescript. *coding_principles"
+    model: *medium
+    endpoint: *base "/chat/completions"
+    temperature: 0.2
+    auth_type: none
+    max_tokens: 2000
+    type: "edit"
+    ui:
+      paste_mode: 1
+      context_size: 4096
+
+  debug:
+    prompt: "Analyze this code for bugs and suggest fixes. Adhere to modern language APIs and practices. Avoid deprecated properties, methods, etc. *coding_principles"
+    model: *medium
+    endpoint: *base completions
+    temperature: 0.2
+    auth_type: none
+    type: "edit"
+    max_tokens: 2000
+    ui:
+      paste_mode: 1
+      context_size: 4096
+
+  complete:
+    prompt:
+      *coding_principles
+    model: *light
+    endpoint: *base completions
+    type: "edit"
+    temperature: 0.1
+    auth_type: none
+
+
+  refactor:
+    prompt: "Optimize this code for performance and readability. *coding_principles"
+    model: *medium
+    endpoint: *base chat/completions
+    temperature: 0.1
+    type: "edit"
+    auth_type: none
+
+
+  architect:
+    prompt: "You are a software architect. Analyze the code/requirements and provide: 1) High-level design decisions, 2) Component breakdown, 3) Data flow, 4) Tech stack recommendations, 5) Trade-offs. Be concise but comprehensive. Design the architecture considering: scalability, maintainability, security, performance. Suggest patterns (EDA microservices, etc.), database choices, and deployment strategy.  Convert requirements to pseudocode. Use plain English, focus on logic flow, ignore syntax. Number steps clearly.  Generate Mermaid diagram code. Choose appropriate diagram type: flowchart, sequence, class, ER, state, or architecture. Return ONLY valid Mermaid syntax, no explanations outside code block.  Document your design in a markdown document and generate mermaid graphs. *coding_principles"
+    model: *heavy
+    endpoint: *base chat/completions
+    temperature: 0.1
+    auth_type: none
+    type: "chat"
+    max_tokens: 2000
+    ui:
+      paste_mode: 1
+      context_size: 4096
+
+
+  uml:
+    prompt: "Create UML diagrams in PlantUML syntax. Choose: class diagram, sequence diagram, component diagram, or deployment diagram based on context. Return valid PlantUML code. *coding_principles"
+    model: *medium
+    endpoint: *base chat/completions
+    type: "chat"
+    temperature: 0.1
+    auth_type: none
