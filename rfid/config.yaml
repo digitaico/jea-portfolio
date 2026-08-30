@@ -1,0 +1,10 @@
+# Reader connection settings for field discovery
+reader:
+  host: "169.254.104.152"   # Change to your reader's IP
+  port: 5084
+  duration: 10.0          # Seconds to run inventory
+  antennas: [1, 2, 3, 4]
+  tx_power: 0             # 0 = max power
+
+# How many tag reports to capture before stopping (0 = no limit, use duration)
+max_reports: 50

@@ -1,2 +1,17 @@
+annotated-types==0.7.0
+attrs==26.1.0
+Automat==25.4.16
 click==8.4.1
+constantly==23.10.4
+hyperlink==21.0.0
+idna==3.16
+Incremental==24.11.0
+packaging==26.2
+pydantic==2.13.4
+pydantic_core==2.46.4
+PyYAML==6.0.3
 sllurp==3.0.5
+Twisted==26.4.0
+typing-inspection==0.4.2
+typing_extensions==4.15.0
+zope.interface==8.5
