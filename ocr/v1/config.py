@@ -23,10 +23,10 @@ class Settings(BaseSettings):
 
     gemini_api_key: SecretStr
     gemini_model: str = "gemini-2.5-flash"
-    pdf_dpi: int = 200
+    pdf_dpi: int = 300
     max_image_dim: int = 2048
     max_upload_mb: int = 20
-    output_dir: Path = Path("./output")
+    output_dir: Path = Path("./result")
 
 
 @lru_cache

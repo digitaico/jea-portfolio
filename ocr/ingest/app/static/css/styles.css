@@ -1,0 +1,268 @@
+/* ==========================================================================
+   Lector de Órdenes Médicas — DigitAI
+   Clean, defensive CSS. SVGs also carry width/height attrs so they never
+   balloon if this file is cached/unloaded.
+   ========================================================================== */
+
+:root {
+  --paper: #eef3f7;
+  --surface: #ffffff;
+  --ink: #0e2a3b;
+  --muted: #64768499;
+  --muted-solid: #5c7080;
+  --accent: #0fa79e;
+  --accent-deep: #0b807a;
+  --accent-tint: #e6f6f4;
+  --border: #dbe4ec;
+  --radius: 16px;
+  --radius-sm: 11px;
+  --shadow-sm: 0 1px 2px rgba(14, 42, 59, 0.06);
+  --shadow-md: 0 14px 40px -12px rgba(14, 42, 59, 0.18);
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background:
+    radial-gradient(900px 420px at 50% -160px, var(--accent-tint), transparent 70%),
+    var(--paper);
+  display: flex;
+  flex-direction: column;
+}
+
+img, svg { display: block; }
+svg { flex: none; }               /* never let icons stretch */
+
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* ---- brand bar ---------------------------------------------------------- */
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.4rem;
+  background: rgba(255, 255, 255, 0.72);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+}
+.brand__link { display: inline-flex; align-items: center; }
+.brand__logo { height: 30px; width: auto; }
+.brand__context { font-size: 0.8rem; color: var(--muted-solid); }
+
+/* ---- shell -------------------------------------------------------------- */
+.shell {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 2.75rem 1.25rem 2rem;
+  flex: 1;
+}
+
+/* ---- hero --------------------------------------------------------------- */
+.hero { text-align: center; margin-bottom: 1.75rem; }
+.hero__mark {
+  width: 64px;
+  margin: 0 auto 1rem;
+  filter: drop-shadow(0 10px 20px rgba(14, 42, 59, 0.12));
+}
+.hero__mark svg { width: 100%; height: auto; }
+.hero__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.7rem, 6vw, 2.35rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem;
+}
+.hero__subtitle {
+  max-width: 34ch;
+  margin: 0 auto;
+  color: var(--muted-solid);
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+/* ---- upload card -------------------------------------------------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.card__or {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted-solid);
+  font-size: 0.82rem;
+}
+.card__or::before, .card__or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.card__actions { display: flex; flex-direction: column; gap: 0.5rem; }
+.card__hint { margin: 0; text-align: center; color: var(--muted-solid); font-size: 0.8rem; }
+
+/* ---- dropzone: the scanner (signature) ---------------------------------- */
+.dropzone {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 190px;
+  padding: 1.75rem;
+  font-family: inherit;
+  color: var(--ink);
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    var(--accent-tint);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+.dropzone__icon { width: 34px; height: 34px; color: var(--accent); margin-bottom: 0.2rem; }
+.dropzone strong { font-family: var(--font-display); font-weight: 600; font-size: 1.08rem; }
+.dropzone__hint { color: var(--muted-solid); font-size: 0.88rem; }
+.dropzone:hover { border-color: var(--accent); background: var(--accent-tint); }
+.dropzone--active { border-color: var(--accent); border-style: solid; background: var(--accent-tint); }
+
+.dropzone__scan {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  animation: scan 3.4s ease-in-out infinite;
+}
+@keyframes scan {
+  0% { top: 12%; opacity: 0; }
+  20% { opacity: 0.85; }
+  80% { opacity: 0.85; }
+  100% { top: 88%; opacity: 0; }
+}
+
+/* ---- camera ------------------------------------------------------------- */
+.camera { display: flex; flex-direction: column; gap: 0.6rem; }
+.camera__stage[hidden] { display: none; }
+.camera__stage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.6rem;
+  background: #f4f8fa;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.camera__video { width: 100%; border-radius: 9px; background: #05141c; }
+.camera__controls { display: flex; gap: 0.5rem; }
+
+/* ---- preview ------------------------------------------------------------ */
+.preview { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.preview:empty { display: none; }
+.preview__thumb {
+  width: 72px; height: 72px;
+  object-fit: cover;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---- buttons ------------------------------------------------------------ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.62rem 1.1rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.15s, background 0.15s, transform 0.08s;
+}
+.btn:hover { border-color: var(--accent); }
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible { outline: 3px solid rgba(15, 167, 158, 0.38); outline-offset: 2px; }
+.btn--block { width: 100%; }
+.btn--primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn--primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+
+/* ---- capability chips --------------------------------------------------- */
+.caps {
+  list-style: none;
+  margin: 1.1rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+}
+.caps__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  color: var(--muted-solid);
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.caps__item svg { width: 15px; height: 15px; color: var(--accent); }
+
+/* ---- result page -------------------------------------------------------- */
+.result { display: flex; flex-direction: column; gap: 1rem; }
+.result__heading { font-family: var(--font-display); font-weight: 600; font-size: 1.3rem; margin: 0; }
+.result__list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.result__item {
+  display: flex; gap: 1rem; align-items: baseline;
+  padding: 0.75rem 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.result__name { font-weight: 600; }
+.result__meta { color: var(--muted-solid); font-size: 0.84rem; }
+
+/* ---- footer ------------------------------------------------------------- */
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 1.5rem 1.25rem 2rem;
+  color: var(--muted-solid);
+}
+.foot__logo { height: 18px; width: auto; opacity: 0.6; }
+.foot__note { font-size: 0.78rem; }
+
+/* ---- motion ------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .dropzone__scan { animation: none; opacity: 0; }
+  .btn, .dropzone { transition: none; }
+}

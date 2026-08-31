@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/webp" href="/static/img/logo_digitai_color.webp" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/css/styles.css?v=3" />
+  </head>
+  <body>
+    <header class="brand">
+      <a class="brand__link" href="/">
+        <img class="brand__logo" src="/static/img/logo_digitai_color.webp" alt="DigitAI" />
+      </a>
+      <span class="brand__context">Digitalización clínica</span>
+    </header>
+
+    <main class="shell">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="foot">
+      <img class="foot__logo" src="/static/img/logo_digitai_color.webp" alt="DigitAI" />
+      <span class="foot__note">Lectura de órdenes médicas · Colombia</span>
+    </footer>
+
+    <script type="module" src="/static/js/components.js?v=3"></script>
+  </body>
+</html>
