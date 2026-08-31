@@ -2,16 +2,24 @@
 
 {% block content %}
 <section class="result">
-  <h2 class="result__heading">Received {{ received | length }} file(s)</h2>
+  <h2 class="result__heading">{{ received | length }} archivo(s) procesado(s)</h2>
   <ul class="result__list">
     {% for item in received %}
     <li class="result__item">
       <span class="result__name">{{ item.filename }}</span>
-      <span class="result__meta">{{ item.content_type }}</span>
-      <span class="result__meta">{{ "%.1f"|format(item.size_bytes / 1024) }} KB</span>
+      {% if item.error %}
+        <span class="result__meta result__meta--error">{{ item.error }}</span>
+      {% else %}
+        <span class="result__meta">{{ item.source_format }}</span>
+        <span class="result__meta">{{ item.dimensions }} px</span>
+        {% if item.page_count > 1 %}
+          <span class="result__meta">{{ item.page_count }} páginas</span>
+        {% endif %}
+        <span class="result__meta">{{ "%.1f"|format(item.size_bytes / 1024) }} KB</span>
+      {% endif %}
     </li>
     {% endfor %}
   </ul>
-  <a class="btn" href="/">Upload more</a>
+  <a class="btn btn--primary" href="/">Subir otra orden</a>
 </section>
 {% endblock %}

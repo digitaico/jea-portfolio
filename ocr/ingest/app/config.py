@@ -14,8 +14,9 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_title: str = "Document Image Upload"
+    app_title: str = "Lector de Órdenes Médicas"
     max_upload_mb: int = 20  # shown to the user; enforced properly in later stages
+    pdf_dpi: int = 200       # rasterization DPI for PDF pages (Stage 2)
 
 
 @lru_cache

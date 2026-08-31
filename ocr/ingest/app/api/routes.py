@@ -12,6 +12,8 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from app.config import Settings, get_settings
+from app.domain.errors import DecodeError
+from app.domain.ports import PageDecoder
 
 router = APIRouter()
 
@@ -46,22 +48,54 @@ async def root_ca() -> FileResponse:
     )
 
 
+def get_decoders(request: Request) -> list[PageDecoder]:
+    # Injected at startup (composition root). Route never constructs decoders.
+    return request.app.state.decoders
+
+
+def _select_decoder(
+    decoders: list[PageDecoder], filename: str, content_type: str | None
+) -> PageDecoder | None:
+    # OCP: first decoder that supports the file wins; adding a format = adding
+    # a decoder in the composition root, not editing this loop.
+    for decoder in decoders:
+        if decoder.supports(filename, content_type):
+            return decoder
+    return None
+
+
 @router.post("/images", response_class=HTMLResponse)
 async def receive_images(
     request: Request,
     files: list[UploadFile] = File(...),
     settings: Settings = Depends(get_settings),
+    decoders: list[PageDecoder] = Depends(get_decoders),
 ) -> HTMLResponse:
-    # Transport confirmation only: read each part to learn its true size, then
-    # report back. Nothing is decoded or stored in Stage 1.
+    # Stage 2: decode + normalize to RGB. Report decoded pages and metadata.
+    # Per-file isolation: one bad file fails that file, not the batch.
     received = []
     for file in files:
         data = await file.read()
+        filename = file.filename or "sin-nombre"
+        decoder = _select_decoder(decoders, filename, file.content_type)
+
+        if decoder is None:
+            received.append({"filename": filename, "error": "Formato no soportado"})
+            continue
+        try:
+            pages = decoder.decode(data, filename, file.content_type)
+        except DecodeError as exc:
+            received.append({"filename": filename, "error": str(exc)})
+            continue
+
+        first = pages[0]
         received.append(
             {
-                "filename": file.filename or "unnamed",
-                "content_type": file.content_type or "unknown",
+                "filename": filename,
+                "source_format": first.source_format,
+                "page_count": first.page_count,
                 "size_bytes": len(data),
+                "dimensions": f"{first.width}×{first.height}",
             }
         )
 

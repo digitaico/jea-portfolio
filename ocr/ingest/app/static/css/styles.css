@@ -48,14 +48,14 @@ svg { flex: none; }               /* never let icons stretch */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.9rem 1.4rem;
+  padding: 0.6rem 1.4rem;
   background: rgba(255, 255, 255, 0.72);
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(8px);
 }
 .brand__link { display: inline-flex; align-items: center; }
-.brand__logo { height: 30px; width: auto; }
-.brand__context { font-size: 0.8rem; color: var(--muted-solid); }
+.brand__logo { height: 50px; width: auto; }
+.brand__context { font-size: 1.0rem; color: var(--muted-solid); }
 
 /* ---- shell -------------------------------------------------------------- */
 .shell {
@@ -258,7 +258,7 @@ svg { flex: none; }               /* never let icons stretch */
   padding: 1.5rem 1.25rem 2rem;
   color: var(--muted-solid);
 }
-.foot__logo { height: 18px; width: auto; opacity: 0.6; }
+.foot__logo { height: 25px; width: auto; opacity: 0.6; }
 .foot__note { font-size: 0.78rem; }
 
 /* ---- motion ------------------------------------------------------------- */
