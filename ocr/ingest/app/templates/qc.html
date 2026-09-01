@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="qc">
+  <h2 class="result__heading">QC · Original vs. Procesada</h2>
+  <p class="qc__sub">Métricas de calidad y decisiones de preprocesamiento. {{ docs | length }} documento(s).</p>
+
+  {% for doc in docs %}
+  <article class="qc__doc">
+    <header class="qc__dochead">ID {{ doc.image_id[:8] }} · {{ doc.pages | length }} página(s)</header>
+    {% for page in doc.pages %}
+    <div class="qc__pair">
+      <figure class="qc__cell">
+        <figcaption class="qc__cap">Original · pág {{ page.page + 1 }}</figcaption>
+        {% if page.original_url %}
+          <a href="{{ page.original_url }}" target="_blank"><img class="qc__img" src="{{ page.original_url }}" loading="lazy" alt="original"></a>
+        {% else %}<span class="result__meta">—</span>{% endif %}
+        {% if page.quality %}
+        <ul class="qc__notes">
+          <li class="qc__note">Nitidez: {{ page.quality.sharpness }}</li>
+          <li class="qc__note">Ruido σ: {{ page.quality.noise_sigma }}</li>
+          <li class="qc__note">Inclinación: {{ page.quality.skew_angle }}°</li>
+          <li class="qc__note">Iluminación: {{ page.quality.illumination_unevenness }}</li>
+          <li class="qc__note">Relleno de página: {{ page.quality.page_fill_ratio }}</li>
+          <li class="qc__note">{{ page.quality.megapixels }} MP ({{ page.quality.width }}×{{ page.quality.height }})</li>
+        </ul>
+        {% endif %}
+      </figure>
+      <figure class="qc__cell">
+        <figcaption class="qc__cap">Procesada · pág {{ page.page + 1 }}</figcaption>
+        {% if page.processed_url %}
+          <a href="{{ page.processed_url }}" target="_blank"><img class="qc__img" src="{{ page.processed_url }}" loading="lazy" alt="procesada"></a>
+        {% else %}<span class="result__meta">—</span>{% endif %}
+        {% if page.notes %}
+        <ul class="qc__notes">
+          {% for note in page.notes %}<li class="qc__note">{{ note }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+      </figure>
+    </div>
+    {% endfor %}
+  </article>
+  {% endfor %}
+
+  {% if not docs %}<p class="qc__sub">No hay imágenes almacenadas todavía.</p>{% endif %}
+  <a class="btn" href="/">← Volver</a>
+</section>
+{% endblock %}

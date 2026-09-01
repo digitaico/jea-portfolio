@@ -127,9 +127,17 @@ class CameraCapture extends HTMLElement {
 customElements.define("upload-dropzone", UploadDropzone);
 customElements.define("camera-capture", CameraCapture);
 
-// Live thumbnail previews of whatever is currently selected/captured.
+// Live thumbnail previews + submit guard.
 const input = document.getElementById("file-input");
 const preview = document.getElementById("preview");
+const form = document.querySelector("form.card");
+const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+
+function syncSubmit() {
+  const hasFiles = !!(input && input.files && input.files.length);
+  if (submitBtn) submitBtn.disabled = !hasFiles;
+}
+
 if (input && preview) {
   input.addEventListener("change", () => {
     preview.innerHTML = "";
@@ -139,6 +147,16 @@ if (input && preview) {
       img.src = URL.createObjectURL(file);
       img.onload = () => URL.revokeObjectURL(img.src);
       preview.appendChild(img);
+    }
+    syncSubmit();
+  });
+}
+
+if (form) {
+  syncSubmit(); // start disabled
+  form.addEventListener("submit", (e) => {
+    if (!input || !input.files || input.files.length === 0) {
+      e.preventDefault(); // belt-and-suspenders: never submit empty
     }
   });
 }

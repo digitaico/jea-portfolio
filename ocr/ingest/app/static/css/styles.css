@@ -48,14 +48,14 @@ svg { flex: none; }               /* never let icons stretch */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.6rem 1.4rem;
+  padding: 0.9rem 1.4rem;
   background: rgba(255, 255, 255, 0.72);
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(8px);
 }
 .brand__link { display: inline-flex; align-items: center; }
-.brand__logo { height: 50px; width: auto; }
-.brand__context { font-size: 1.0rem; color: var(--muted-solid); }
+.brand__logo { height: 30px; width: auto; }
+.brand__context { font-size: 0.8rem; color: var(--muted-solid); }
 
 /* ---- shell -------------------------------------------------------------- */
 .shell {
@@ -258,11 +258,59 @@ svg { flex: none; }               /* never let icons stretch */
   padding: 1.5rem 1.25rem 2rem;
   color: var(--muted-solid);
 }
-.foot__logo { height: 25px; width: auto; opacity: 0.6; }
+.foot__logo { height: 18px; width: auto; opacity: 0.6; }
 .foot__note { font-size: 0.78rem; }
 
 /* ---- motion ------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   .dropzone__scan { animation: none; opacity: 0; }
   .btn, .dropzone { transition: none; }
+}
+
+.result__meta--error { color: var(--danger, #c0392b); }
+
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:disabled:hover { border-color: var(--accent); }
+
+/* ---- Stage 4: decoded-page QC gallery ----------------------------------- */
+.doc {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.doc__head { display: flex; flex-wrap: wrap; gap: 0.5rem 0.9rem; align-items: baseline; }
+.doc__name { font-weight: 600; }
+.doc__pages { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.page { margin: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+.page__img {
+  max-width: 220px;
+  max-height: 300px;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  background: #fff;
+}
+.page__cap { font-size: 0.75rem; color: var(--muted-solid); text-align: center; }
+
+/* ---- QC comparison view (evaluation only) ------------------------------- */
+.qc { display: flex; flex-direction: column; gap: 1rem; }
+.qc__sub { margin: 0; color: var(--muted-solid); font-size: 0.9rem; }
+.qc__doc {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 0.9rem;
+  display: flex; flex-direction: column; gap: 0.75rem;
+}
+.qc__dochead { font-weight: 600; font-size: 0.9rem; }
+.qc__pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.qc__cell { margin: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.qc__cap { font-size: 0.75rem; color: var(--muted-solid); }
+.qc__img {
+  width: 100%; height: auto; border-radius: 8px;
+  border: 1px solid var(--border); box-shadow: var(--shadow-sm); background: #fff;
 }
