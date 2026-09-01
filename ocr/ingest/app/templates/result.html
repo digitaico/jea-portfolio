@@ -1,33 +1,37 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="result">
-  <h2 class="result__heading">{{ received | length }} archivo(s) procesado(s)</h2>
+<section class="results">
+  <h2 class="results__heading">{{ received | length }} archivo(s) procesado(s)</h2>
 
   {% for item in received %}
-  <article class="doc">
-    <header class="doc__head">
-      <span class="doc__name">{{ item.filename }}</span>
+  <article class="docr">
+    <header class="docr__head">
+      <span class="docr__name">{{ item.filename }}</span>
       {% if item.error %}
         <span class="result__meta result__meta--error">{{ item.error }}</span>
-      {% else %}
-        <span class="result__meta">{{ item.source_format }}</span>
-        <span class="result__meta">{{ item.dimensions }} px</span>
-        {% if item.page_count > 1 %}<span class="result__meta">{{ item.page_count }} páginas</span>{% endif %}
-        <span class="result__meta">{{ "%.1f"|format(item.size_bytes / 1024) }} KB</span>
-        {% if item.image_id %}<span class="result__meta">ID {{ item.image_id[:8] }}</span>{% endif %}
+      {% elif item.page_count and item.page_count > 1 %}
+        <span class="result__meta">{{ item.page_count }} páginas</span>
       {% endif %}
     </header>
 
     {% if item.pages %}
-    <div class="doc__pages">
       {% for page in item.pages %}
-      <figure class="page">
-        <img class="page__img" src="{{ page.data_uri }}" alt="Página {{ page.index + 1 }}" loading="lazy" />
-        {% if item.page_count > 1 %}<figcaption class="page__cap">Página {{ page.index + 1 }}</figcaption>{% endif %}
-      </figure>
+      <div class="pager">
+        {% if item.page_count and item.page_count > 1 %}
+        <div class="pager__label">Página {{ page.index + 1 }}</div>
+        {% endif %}
+        <img class="pager__thumb zoomable" src="{{ page.data_uri }}"
+             alt="Página {{ page.index + 1 }}" loading="lazy" />
+        <div class="pager__text">
+          {% if page.text %}
+            <pre class="transcript">{{ page.text }}</pre>
+          {% else %}
+            <p class="result__meta">Sin texto.</p>
+          {% endif %}
+        </div>
+      </div>
       {% endfor %}
-    </div>
     {% endif %}
   </article>
   {% endfor %}

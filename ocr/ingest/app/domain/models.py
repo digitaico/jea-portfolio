@@ -42,6 +42,14 @@ class QualityReport:
 
 
 @dataclass
+class ReadabilityVerdict:
+    """Whether a page is readable enough to OCR, and why not if it isn't."""
+
+    readable: bool
+    reasons: list[str]
+
+
+@dataclass
 class LoadedImage:
     """A single decoded, RGB-normalized page.
 

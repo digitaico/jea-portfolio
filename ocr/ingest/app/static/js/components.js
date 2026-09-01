@@ -157,6 +157,29 @@ if (form) {
   form.addEventListener("submit", (e) => {
     if (!input || !input.files || input.files.length === 0) {
       e.preventDefault(); // belt-and-suspenders: never submit empty
+      return;
     }
+    const loading = document.getElementById("loading");
+    if (loading) loading.hidden = false; // show while the server + model work
   });
 }
+
+// --- lightbox: click any img.zoomable to enlarge; click image to 2x; bg to close ---
+document.addEventListener("click", (e) => {
+  const img = e.target.closest && e.target.closest("img.zoomable");
+  if (!img) return;
+  const overlay = document.createElement("div");
+  overlay.className = "lightbox";
+  const big = document.createElement("img");
+  big.className = "lightbox__img";
+  big.src = img.src;
+  overlay.appendChild(big);
+  document.body.appendChild(overlay);
+  let zoomed = false;
+  big.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    zoomed = !zoomed;
+    big.classList.toggle("lightbox__img--zoom", zoomed);
+  });
+  overlay.addEventListener("click", () => overlay.remove());
+});

@@ -19,6 +19,9 @@ POST /images (files)
   → assess      measure quality metrics      (does NOT change pixels)
   → preprocess  consume metrics, clean page  (does NOT re-measure)
   → store       original + processed + quality.json + report.json
+  → ocr         2 calls on the processed page (Gemini):
+                 (1) verbatim transcription  -> p<N>.json + p<N>.txt
+                 (2) structured extraction   -> p<N>_structured.json
   → visualize   show the original to the user
 ```
 
@@ -36,7 +39,8 @@ quality metrics and the preprocessing decisions.
 | 3     | Assess        | Measure quality metrics on the decoded original.            |
 | 4     | Preprocess    | Consume the metrics; crop / illumination / denoise / resize. |
 | 5     | Store         | Persist original, processed, quality.json, report.json.     |
-| 6     | Visualize/QC  | Show original to the user; original-vs-processed in `/qc`.   |
+| 6     | OCR           | Transcribe the processed page via a provider (Gemini first). |
+| 7     | Visualize/QC  | Show original to the user; image + transcription in `/qc`.   |
 
 Assessment and preprocessing are separate concerns: assessment **only measures**,
 preprocessing **only consumes** those measurements. Neither re-does the other's
@@ -140,3 +144,66 @@ Per page, keyed by one `image_id` per upload:
 
 OCR (Gemini/Mistral), auth on `/qc` and `/files`, object storage, event-driven
 service split. Each is a clean addition at an existing seam.
+
+---
+
+## OCR (Stage 6) — automatic, provider-agnostic
+
+After preprocessing, the page selected by `OCR_INPUT` (`processed` by default) is
+sent to an OCR provider behind the `OcrProvider` port. Gemini Flash is the first
+adapter; Mistral or others swap in without touching the pipeline (OCP/LSP/DIP).
+Free-form, Spanish-first transcription — no orientation handling.
+
+Results per page:
+
+```
+<id>_p<N>.json    { image_id, page_index, page_count, model, source,
+                    transcribed_at, text }
+<id>_p<N>.txt     plain transcription
+```
+
+Shown in `/qc` beside the image. Per-page isolation: an OCR failure records an
+error for that page and does not stop the batch.
+
+### OCR configuration (`.env`)
+
+`GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_MAX_RETRIES`, `GEMINI_TIMEOUT`,
+`GEMINI_TEMPERATURE`, `GEMINI_MAX_OUTPUT_TOKENS`, `OCR_INPUT`
+(`processed` | `original`), `OCR_LANGUAGE_HINT`.
+
+---
+
+## OCR outputs (Stage 6) — transcription + structured extraction
+
+Two Gemini calls per page (MVP; a single combined call is a later production
+optimization behind the same ports):
+
+1. **Transcription** — verbatim free-form text (unchanged): `p<N>.txt` + `p<N>.json`.
+2. **Structured extraction** — JSON keyed by the semantic areas, schema-enforced,
+   missing values `null`, content outside the areas dropped: `p<N>_structured.json`.
+   Stored for a future database service; not consumed yet.
+
+### Prompts and areas — file-driven, no code edits
+
+Paths come from `.env`:
+
+- `OCR_TRANSCRIPTION_PROMPT_FILE` — template with `{language_hint}`.
+- `OCR_EXTRACTION_PROMPT_FILE` — template with `{language_hint}` and `{areas}`.
+- `OCR_AREAS_FILE` — a richer schema mapping each area to its sub-fields, e.g.
+
+  ```json
+  {
+    "datos_paciente":  ["nombre", "identificacion", "fecha_nacimiento", "sexo"],
+    "datos_examen":    ["tipo", "fecha", "indicacion"],
+    "diagnostico":     ["texto", "codigo_cie"],
+    "medico_tratante": ["nombre", "registro", "firma_presente"]
+  }
+  ```
+
+The areas file drives three things at once: the `{areas}` text injected into the
+extraction prompt, the JSON response schema Gemini must return, and (later) the
+database columns. Edit the file to change what is extracted — no code changes.
+
+Ports: `OcrProvider` (transcribe) and `StructuredExtractor` (extract) are
+separate, so transcription and extraction can use different models or later
+collapse into one call, without touching the pipeline.

@@ -36,6 +36,10 @@
           {% for note in page.notes %}<li class="qc__note">{{ note }}</li>{% endfor %}
         </ul>
         {% endif %}
+        {% if page.text is not none %}
+        <figcaption class="qc__cap">Transcripción</figcaption>
+        <pre class="qc__text">{{ page.text }}</pre>
+        {% endif %}
       </figure>
     </div>
     {% endfor %}

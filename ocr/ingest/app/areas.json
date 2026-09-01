@@ -1,0 +1,7 @@
+{
+  "datos_paciente": ["nombre", "identificacion", "fecha_nacimiento", "sexo"],
+  "datos_examen": ["tipo", "fecha", "indicacion"],
+  "diagnostico": ["texto", "codigo_cie"],
+  "medico_tratante": ["nombre", "registro", "firma_presente", "profesional"],
+  "fecha_atencion": ["fecha de atencion", "fecha creacion", "fecha impresion", "fecha", "fecha admision"]
+}
