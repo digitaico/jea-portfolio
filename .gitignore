@@ -4,6 +4,11 @@ __pycache__/
 *$py.class
 *.pyc
 
+*.fit
+*.gpx
+*.csv
+
+
 *.log
 Thumbs.db
 ._*
