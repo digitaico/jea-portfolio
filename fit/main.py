@@ -1,6 +1,6 @@
 import sys
 import os
-import fitparse
+import fitparse.records
 import json
 
 def fit_to_json(input_filepath):
@@ -9,16 +9,22 @@ def fit_to_json(input_filepath):
 
     try:
         # Load the .fit file
-        fitfile = fitparse.FitFile(input_filepath)
+        fitparse.records.FieldDefinition.check_value = lambda self, val: True
+
+        fitfile = fitparse.FitFile(input_filepath, check_crc=False)
         session_data = []
 
         # loop trough records
         for record in fitfile.get_messages():
-            record_data = {field.name: field.value for field in record if field.value is not None}
-            session_data.append({
-                "type": record.name,
-                "data": record_data
-            })
+            try:
+                record_data = {field.name: field.value for field in record if field.value is not None}
+                session_data.append({
+                    "type": record.name,
+                    "data": record_data
+                })
+            except Exception as record_err:
+                # pasa records corruptos
+                continue
 
         # return json file
         with open(output_filepath, 'w', encoding='utf-8') as f:
