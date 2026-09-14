@@ -1,52 +1,46 @@
-import sys
-import os
-import fitparse.records
 import json
+import os
+import sys
+import warnings
 
-def fit_to_json(input_filepath):
-    base_name = os.path.splitext(input_filepath)[0]
-    output_filepath = f"{base_name}.json"
+import fitdecode
 
-    try:
-        # Load the .fit file
-        fitparse.records.FieldDefinition.check_value = lambda self, val: True
+warnings.simplefilter("ignore")
 
-        fitfile = fitparse.FitFile(input_filepath, check_crc=False)
-        session_data = []
+# Message types kept. file_id + device_info carry watch/manufacturer info.
+KEEP = ("file_id", "device_info", "session", "lap", "record")
 
-        # loop trough records
-        for record in fitfile.get_messages():
-            try:
-                record_data = {field.name: field.value for field in record if field.value is not None}
-                session_data.append({
-                    "type": record.name,
-                    "data": record_data
-                })
-            except Exception as record_err:
-                # pasa records corruptos
+# Core per-record fields. Edit this list to taste.
+RECORD_FIELDS = (
+    "timestamp", "distance", "heart_rate", "speed",
+    "cadence", "altitude", "power",
+    "position_lat", "position_long",
+)
+
+# FIT stores position in semicircles; multiply by this to get degrees.
+SEMICIRCLE_TO_DEG = 180.0 / (2 ** 31)
+
+
+def read_run(path):
+    data = {}
+    with fitdecode.FitReader(path) as fit:
+        for f in fit:
+            if not isinstance(f, fitdecode.FitDataMessage) or f.name not in KEEP:
                 continue
+            v = {x.name: x.value for x in f.fields}
+            if f.name == "record":
+                v = {k: v.get(k) for k in RECORD_FIELDS}
+                lat, lon = v.get("position_lat"), v.get("position_long")
+                v["position_lat"] = lat * SEMICIRCLE_TO_DEG if lat is not None else None
+                v["position_long"] = lon * SEMICIRCLE_TO_DEG if lon is not None else None
+            data.setdefault(f.name, []).append(v)
+    return data
 
-        # return json file
-        with open(output_filepath, 'w', encoding='utf-8') as f:
-            json.dump(session_data, f, indent =4, default=str)
-        
-        print(f"Exito>> Convirtio '{input_filepath}' -> '{output_filepath}'")
 
-    except Exception as e:
-        print(f"Error procesando '{input_filepath}': {e}")
-        
-if __name__== "__main__":
-    if len(sys.argv) != 2:
-        print("Uso: p3 main.py <nombre archivo>")
-        sys.exit(1)
-
-    target_path = sys.argv[1]
-    
-    if os.path.isfile(target_path) and target_path.lower().endswith('.fit'):
-        fit_to_json(target_path)
-    elif os.path.isdir(target_path):
-        for filename in os.listdir(target_path):
-            if filename.lower().endswith('.fit'):
-                fit_to_json(os.path.join(target_path, filename))
-    else:
-        print("Error: Provide a valid .fit file or a directory containing .fit files.")
+if __name__ == "__main__":
+    path = sys.argv[1] if len(sys.argv) > 1 else "activity.fit"
+    data = read_run(path)
+    out = os.path.splitext(path)[0] + ".json"
+    with open(out, "w") as fp:
+        json.dump(data, fp, default=str, indent=2)
+    print("saved", out)
